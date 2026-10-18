@@ -559,6 +559,8 @@
 
   /* ---------- Mobile mode: the whole site in a phone-width column ---------- */
   .mobile-btn { font-size: 0.95rem; padding: 0.55rem 1.2rem; }
+  .mc-left-btn { position: fixed; left: 1.2rem; bottom: 1.2rem; z-index: 90; }
+  html.mobile-mode .mc-left-btn { left: max(0.8rem, calc(50vw - 215px + 0.8rem)); bottom: 6.2rem; }
   html.mobile-mode body { max-width: 430px; margin: 0 auto; min-height: 100vh; }
   @media (min-width: 461px) {
     html.mobile-mode body { box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.55), 0 0 60px rgba(0, 0, 0, 0.5); border-radius: 28px; }
@@ -1208,7 +1210,7 @@
     97% { transform: translate(-3px, 4px); filter: contrast(2) saturate(0) ; }
   }
   html.hk-active header, html.hk-active main, html.hk-active footer { animation: hkGlitch 0.9s infinite; }
-  /* ---------- Arcade (12 mini games) ---------- */
+  /* ---------- Arcade (15 mini games) ---------- */
   .arcade-overlay {
     position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); display: none;
     align-items: center; justify-content: center; z-index: 210; padding: 1rem;
@@ -1228,6 +1230,8 @@
     background: rgba(255, 255, 255, 0.1); font-family: inherit; transition: transform 0.15s, background 0.15s;
   }
   .ar-card-game:hover { transform: translateY(-3px) scale(1.03); background: rgba(255, 255, 255, 0.22); }
+  .ar-card-game { position: relative; }
+  .ar-new { position: absolute; top: 6px; right: 8px; padding: 1px 7px; border-radius: 999px; background: #ffd23f; color: #3a2a00; font-size: 0.68rem; font-weight: 800; }
   .ar-ico { font-size: 2.2rem; line-height: 1; }
   .ar-name { font-weight: 800; font-size: 1.02rem; }
   .ar-desc { font-size: 0.78rem; opacity: 0.85; text-align: center; }
@@ -1390,9 +1394,10 @@
       </button>
     </div>
     <button class="theme-btn" id="theme-toggle" aria-expanded="false" aria-controls="theme-menu">Theme</button>
-    <button class="theme-btn mobile-btn" id="mc-open" onclick="openMinecraft()">Minecraft</button>
     <button class="theme-btn mobile-btn" id="mobile-toggle" aria-pressed="false">Mobile mode</button>
   </div>
+
+  <button class="theme-btn mobile-btn mc-left-btn" id="mc-open" onclick="openMinecraft()">Minecraft</button>
 
   <div class="cube-scene cube-1" style="top: 12%; left: 6%;">
     <div class="cube">
@@ -1638,7 +1643,7 @@
 
   <div class="arcade-overlay" id="arcade-overlay">
     <div class="arcade-box">
-      <div class="arcade-title">Arcade</div>
+      <div class="arcade-title">Arcade &middot; 15 games</div>
       <button class="piano-close" id="ar-close" aria-label="Close arcade">&times;</button>
       <div class="ar-menu" id="ar-menu"></div>
       <div class="ar-view" id="ar-view" style="display:none">
@@ -1734,7 +1739,7 @@
 
     // Easter eggs: click the cubes in order.
     //   top-right, bottom, top-left  -> piano
-    //   top-left, top-right, bottom  -> arcade (12 mini games)
+    //   top-left, top-right, bottom  -> arcade (15 mini games)
     var CUBE_CODES = [
       { seq: [1, 2, 0], open: function () { openPiano(); } },
       { seq: [0, 1, 2], open: function () { openArcade(); } }
@@ -3397,7 +3402,7 @@
 </script>
 <script>
     /* =====================================================================
-       ARCADE  -  12 mini games, opened with the cube code
+       ARCADE  -  15 mini games, opened with the cube code
        (top-left cube, top-right cube, bottom cube)
        ===================================================================== */
     (function () {
@@ -4193,6 +4198,332 @@
         };
       }
 
+      /* ---------- 13. Connect Four ---------- */
+      function connect4() {
+        var C = 7, R = 6, S = 64, W = C * S, H = (R + 1) * S, c = canvas(W, H), x = c.getContext('2d');
+        var b, turn, over, win, hover = 3, tm = 0, wins = 0;
+        function reset() {
+          b = [];
+          for (var i = 0; i < R; i++) b.push(new Array(C).fill(0));
+          turn = 1; over = false; win = null;
+          status('Your turn - click a column');
+        }
+        function status(t) { api.score(t + '   |   Wins ' + wins + '  Best ' + best('connect4')); }
+        function drop(bd, col, p) {
+          for (var r = R - 1; r >= 0; r--) if (!bd[r][col]) { bd[r][col] = p; return r; }
+          return -1;
+        }
+        function full(bd) { return bd[0].every(Boolean); }
+        var DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+        function check(bd, p) {
+          for (var r = 0; r < R; r++) for (var q = 0; q < C; q++) {
+            if (bd[r][q] !== p) continue;
+            for (var d = 0; d < 4; d++) {
+              var cells = [[r, q]];
+              for (var k = 1; k < 4; k++) {
+                var rr = r + DIRS[d][0] * k, cc = q + DIRS[d][1] * k;
+                if (rr < 0 || rr >= R || cc < 0 || cc >= C || bd[rr][cc] !== p) break;
+                cells.push([rr, cc]);
+              }
+              if (cells.length === 4) return cells;
+            }
+          }
+          return null;
+        }
+        function heur(bd) {
+          var sc = 0, r, q, d, k;
+          for (r = 0; r < R; r++) if (bd[r][3] === 2) sc += 3;
+          for (r = 0; r < R; r++) for (q = 0; q < C; q++) for (d = 0; d < 4; d++) {
+            var n1 = 0, n2 = 0, ok = true;
+            for (k = 0; k < 4; k++) {
+              var rr = r + DIRS[d][0] * k, cc = q + DIRS[d][1] * k;
+              if (rr < 0 || rr >= R || cc < 0 || cc >= C) { ok = false; break; }
+              if (bd[rr][cc] === 1) n1++; else if (bd[rr][cc] === 2) n2++;
+            }
+            if (!ok) continue;
+            if (n2 && !n1) sc += [0, 1, 10, 50][n2] || 0;
+            if (n1 && !n2) sc -= ([0, 1, 10, 50][n1] || 0) * 1.2;
+          }
+          return sc;
+        }
+        var ORDER = [3, 2, 4, 1, 5, 0, 6];
+        function minimax(bd, depth, alpha, beta, maxi) {
+          if (check(bd, 2)) return 100000 + depth;
+          if (check(bd, 1)) return -100000 - depth;
+          if (full(bd) || depth === 0) return heur(bd);
+          var best_ = maxi ? -Infinity : Infinity;
+          for (var i = 0; i < C; i++) {
+            var col = ORDER[i];
+            if (bd[0][col]) continue;
+            var r = drop(bd, col, maxi ? 2 : 1), v = minimax(bd, depth - 1, alpha, beta, !maxi);
+            bd[r][col] = 0;
+            if (maxi) { if (v > best_) best_ = v; if (v > alpha) alpha = v; }
+            else { if (v < best_) best_ = v; if (v < beta) beta = v; }
+            if (beta <= alpha) break;
+          }
+          return best_;
+        }
+        function finish() {
+          var w1 = check(b, 1), w2 = check(b, 2);
+          if (w1) { win = w1; over = true; wins++; best('connect4', wins); api.beep(880, 0.25); status('You win! (click to play again)'); }
+          else if (w2) { win = w2; over = true; api.beep(150, 0.4, 'sawtooth'); status('CPU wins (click to play again)'); }
+          else if (full(b)) { over = true; status('Draw (click to play again)'); }
+          return over;
+        }
+        function cpu() {
+          var bc = -1, bv = -Infinity;
+          for (var i = 0; i < C; i++) {
+            var col = ORDER[i];
+            if (b[0][col]) continue;
+            var r = drop(b, col, 2), v = minimax(b, 4, -Infinity, Infinity, false);
+            b[r][col] = 0;
+            if (v > bv) { bv = v; bc = col; }
+          }
+          drop(b, bc, 2); api.beep(330, 0.08);
+          if (!finish()) { turn = 1; status('Your turn - click a column'); }
+        }
+        function colAt(e) {
+          var r = c.getBoundingClientRect();
+          return Math.max(0, Math.min(C - 1, Math.floor((e.clientX - r.left) / r.width * C)));
+        }
+        c.addEventListener('mousemove', function (e) { hover = colAt(e); });
+        c.addEventListener('click', function (e) {
+          if (over) { reset(); return; }
+          if (turn !== 1) return;
+          var col = colAt(e);
+          hover = col;
+          if (b[0][col]) return;
+          drop(b, col, 1); api.beep(520, 0.08);
+          if (finish()) return;
+          turn = 2; status('CPU is thinking...');
+          tm = setTimeout(cpu, 350);
+        });
+        reset();
+        var stop = loop(function () {
+          x.fillStyle = '#0b1d3a'; x.fillRect(0, 0, W, H);
+          if (!over && turn === 1) {
+            x.fillStyle = 'rgba(255,80,80,0.55)';
+            x.beginPath(); x.arc(hover * S + S / 2, S / 2, S / 2 - 8, 0, 6.3); x.fill();
+          }
+          x.fillStyle = '#1f4fb5'; x.fillRect(0, S, W, R * S);
+          for (var r = 0; r < R; r++) for (var q = 0; q < C; q++) {
+            x.fillStyle = b[r][q] === 1 ? '#ff4d4d' : (b[r][q] === 2 ? '#ffd23f' : '#0b1d3a');
+            x.beginPath(); x.arc(q * S + S / 2, (r + 1) * S + S / 2, S / 2 - 7, 0, 6.3); x.fill();
+          }
+          if (win) {
+            x.strokeStyle = '#fff'; x.lineWidth = 5;
+            win.forEach(function (w) { x.beginPath(); x.arc(w[1] * S + S / 2, (w[0] + 1) * S + S / 2, S / 2 - 9, 0, 6.3); x.stroke(); });
+          }
+        });
+        return { stop: function () { stop(); clearTimeout(tm); }, key: function (e) { if (e.key === 'r' || (e.key === ' ' && over)) reset(); } };
+      }
+
+      /* ---------- 14. Dino Run ---------- */
+      function dino() {
+        var W = 640, H = 220, GY = 170, c = canvas(W, H), x = c.getContext('2d');
+        var d, obs, speed, dist, over, spawn, ks, clouds, step, lastShown;
+        function reset() {
+          d = { y: 0, vy: 0 }; obs = []; speed = 290; dist = 0; over = false; spawn = 1; ks = {}; step = 0; lastShown = -1;
+          clouds = [{ x: 120, y: 40 }, { x: 380, y: 70 }, { x: 560, y: 30 }];
+        }
+        function jump() {
+          if (over) { reset(); return; }
+          if (d.y <= 0) { d.vy = 640; api.beep(500, 0.07); }
+        }
+        c.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
+        reset();
+        function box() { return ks.down && d.y <= 0 ? { w: 46, h: 22 } : { w: 32, h: 42 }; }
+        function frame(dt) {
+          if (!over) {
+            dist += speed * dt * 0.05;
+            speed = Math.min(720, 290 + dist * 0.9);
+            d.vy -= 1750 * dt; d.y += d.vy * dt;
+            if (d.y <= 0) { d.y = 0; d.vy = 0; if (ks.down) d.vy = 0; }
+            if (ks.down && d.y > 0) d.vy -= 1500 * dt;      // fast fall
+            step += dt * speed * 0.03;
+            spawn -= dt;
+            if (spawn <= 0) {
+              var bird = dist > 60 && Math.random() < 0.3;
+              if (bird) obs.push({ x: W + 20, w: 38, h: 22, y: Math.random() < 0.5 ? 6 : 36, bird: true });
+              else { var n = 1 + (Math.random() < 0.3 ? 1 : 0); obs.push({ x: W + 20, w: 16 * n + 6, h: 30 + Math.floor(Math.random() * 20), y: 0, n: n }); }
+              spawn = 0.95 + Math.random() * 1.1 + (720 - speed) / 1500;
+            }
+            var b = box();
+            for (var i = obs.length - 1; i >= 0; i--) {
+              var o = obs[i];
+              o.x -= speed * dt;
+              if (o.x + o.w < -10) { obs.splice(i, 1); continue; }
+              var dx0 = 60 + 4, dx1 = 60 + b.w - 4, dy0 = d.y + 3, dy1 = d.y + b.h - 4;
+              if (o.x + 3 < dx1 && o.x + o.w - 3 > dx0 && o.y + 2 < dy1 && o.y + o.h - 2 > dy0) {
+                over = true; best('dino', Math.floor(dist)); api.beep(110, 0.4, 'sawtooth');
+              }
+            }
+            clouds.forEach(function (cl) { cl.x -= speed * dt * 0.2; if (cl.x < -60) cl.x = W + 40; });
+          }
+          var sc = Math.floor(dist);
+          if (sc !== lastShown || over) {
+            lastShown = sc;
+            api.score('Score ' + sc + '  |  Best ' + best('dino') + (over ? '  -  Game over! (Space / tap to retry)' : ''));
+          }
+          x.fillStyle = '#f4f1e8'; x.fillRect(0, 0, W, H);
+          x.fillStyle = '#d6d2c4';
+          clouds.forEach(function (cl) { x.fillRect(cl.x, cl.y, 46, 10); x.fillRect(cl.x + 10, cl.y - 6, 26, 8); });
+          x.fillStyle = '#535353'; x.fillRect(0, GY, W, 3);
+          for (var k = 0; k < 14; k++) x.fillRect(((k * 53 - dist * 12) % W + W) % W, GY + 8 + (k % 3) * 6, 10, 2);
+          var bx = box(), top = GY - d.y - bx.h;
+          x.fillStyle = '#535353';
+          if (bx.h === 22) {                       // ducking
+            x.fillRect(60, top + 4, 40, 16); x.fillRect(90, top, 14, 14); x.fillStyle = '#f4f1e8'; x.fillRect(98, top + 3, 3, 3);
+          } else {
+            x.fillRect(64, top + 12, 24, 26); x.fillRect(76, top, 20, 16); x.fillRect(94, top + 6, 6, 6);
+            x.fillStyle = '#f4f1e8'; x.fillRect(86, top + 4, 3, 3); x.fillStyle = '#535353';
+            var leg = d.y > 0 ? 0 : (Math.floor(step) % 2);
+            x.fillRect(66, top + 38, 7, leg ? 4 : 2); x.fillRect(80, top + 38, 7, leg ? 2 : 4);
+          }
+          obs.forEach(function (o) {
+            var oy = GY - o.y - o.h;
+            x.fillStyle = '#535353';
+            if (o.bird) {
+              var up = Math.floor(step * 1.5) % 2;
+              x.fillRect(o.x, oy + 8, 30, 8); x.fillRect(o.x + 26, oy + 4, 10, 8);
+              x.fillRect(o.x + 6, up ? oy : oy + 14, 14, 8);
+            } else {
+              for (var i = 0; i < o.n; i++) {
+                var cx = o.x + i * 16 + 3;
+                x.fillRect(cx + 4, oy, 8, o.h); x.fillRect(cx, oy + 10, 5, 12); x.fillRect(cx + 11, oy + 14, 5, 10);
+              }
+            }
+          });
+        }
+        var stop = loop(frame);
+        return {
+          stop: stop,
+          key: function (e) {
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') jump();
+            else if (e.key === 'ArrowDown' || e.key === 's') ks.down = true;
+          },
+          keyup: function (e) { if (e.key === 'ArrowDown' || e.key === 's') ks.down = false; }
+        };
+      }
+
+      /* ---------- 15. Asteroids ---------- */
+      function asteroids() {
+        var W = 600, H = 420, c = canvas(W, H), x = c.getContext('2d');
+        var ship, bullets, rocks, lives, score, level, over, ks, mouse, firing, cool, lastTxt;
+        function rock(px, py, r) {
+          var a = Math.random() * 6.28, sp = 30 + Math.random() * 50 + level * 6, pts = [], n = 10;
+          for (var i = 0; i < n; i++) pts.push(0.75 + Math.random() * 0.4);
+          return { x: px, y: py, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, pts: pts, rot: 0, vr: (Math.random() - 0.5) * 1.2 };
+        }
+        function spawnLevel() {
+          rocks = [];
+          for (var i = 0; i < 3 + level; i++) {
+            var px, py;
+            do { px = Math.random() * W; py = Math.random() * H; } while (Math.hypot(px - W / 2, py - H / 2) < 130);
+            rocks.push(rock(px, py, 40));
+          }
+        }
+        function respawn() { ship = { x: W / 2, y: H / 2, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2.2 }; }
+        function reset() {
+          lives = 3; score = 0; level = 1; over = false; ks = {}; mouse = null; firing = false; cool = 0; bullets = [];
+          spawnLevel(); respawn();
+        }
+        function fire() {
+          if (cool > 0 || over) return;
+          cool = 0.22;
+          bullets.push({ x: ship.x + Math.cos(ship.a) * 14, y: ship.y + Math.sin(ship.a) * 14, vx: ship.vx + Math.cos(ship.a) * 430, vy: ship.vy + Math.sin(ship.a) * 430, life: 0.95 });
+          api.beep(900, 0.05, 'square', 0.03);
+        }
+        function wrap(o) { o.x = (o.x + W) % W; o.y = (o.y + H) % H; }
+        c.addEventListener('pointermove', function (e) {
+          var r = c.getBoundingClientRect();
+          mouse = { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+        });
+        c.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          var r = c.getBoundingClientRect();
+          mouse = { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+          if (over) { reset(); return; }
+          firing = true; fire();
+        });
+        window.addEventListener('pointerup', up);
+        function up() { firing = false; }
+        reset();
+        function frame(dt) {
+          if (!over) {
+            if (mouse && !(ks.ArrowLeft || ks.ArrowRight || ks.a || ks.d)) {
+              var want = Math.atan2(mouse.y - ship.y, mouse.x - ship.x), diff = Math.atan2(Math.sin(want - ship.a), Math.cos(want - ship.a));
+              ship.a += Math.max(-5 * dt, Math.min(5 * dt, diff));
+            }
+            if (ks.ArrowLeft || ks.a) ship.a -= 4.2 * dt;
+            if (ks.ArrowRight || ks.d) ship.a += 4.2 * dt;
+            if (ks.ArrowUp || ks.w) { ship.vx += Math.cos(ship.a) * 230 * dt; ship.vy += Math.sin(ship.a) * 230 * dt; }
+            ship.vx *= 1 - 0.35 * dt; ship.vy *= 1 - 0.35 * dt;
+            ship.x += ship.vx * dt; ship.y += ship.vy * dt; wrap(ship);
+            ship.inv = Math.max(0, ship.inv - dt); cool -= dt;
+            if (ks[' '] || firing) fire();
+            var i, j;
+            for (i = bullets.length - 1; i >= 0; i--) {
+              var bl = bullets[i];
+              bl.x += bl.vx * dt; bl.y += bl.vy * dt; bl.life -= dt; wrap(bl);
+              if (bl.life <= 0) bullets.splice(i, 1);
+            }
+            rocks.forEach(function (r) { r.x += r.vx * dt; r.y += r.vy * dt; r.rot += r.vr * dt; wrap(r); });
+            for (i = bullets.length - 1; i >= 0; i--) {
+              for (j = rocks.length - 1; j >= 0; j--) {
+                var r = rocks[j];
+                if (Math.hypot(bullets[i].x - r.x, bullets[i].y - r.y) < r.r) {
+                  bullets.splice(i, 1); rocks.splice(j, 1);
+                  score += r.r >= 40 ? 20 : (r.r >= 24 ? 50 : 100);
+                  if (r.r > 14) { var nr = r.r >= 40 ? 24 : 12; rocks.push(rock(r.x, r.y, nr), rock(r.x, r.y, nr)); }
+                  api.beep(r.r >= 40 ? 120 : 200, 0.12, 'sawtooth', 0.05);
+                  break;
+                }
+              }
+            }
+            if (ship.inv <= 0) {
+              for (j = 0; j < rocks.length; j++) {
+                if (Math.hypot(ship.x - rocks[j].x, ship.y - rocks[j].y) < rocks[j].r + 7) {
+                  lives--; api.beep(90, 0.5, 'sawtooth', 0.07);
+                  if (lives <= 0) { over = true; best('asteroids', score); } else respawn();
+                  break;
+                }
+              }
+            }
+            if (!rocks.length) { level++; spawnLevel(); ship.inv = 2; }
+          }
+          var txt = 'Score ' + score + '  |  Lives ' + Math.max(0, lives) + '  |  Level ' + level + '  |  Best ' + best('asteroids') + (over ? '  -  Game over! (Space / click to retry)' : '');
+          if (txt !== lastTxt) { lastTxt = txt; api.score(txt); }
+          x.fillStyle = '#05060f'; x.fillRect(0, 0, W, H);
+          x.strokeStyle = '#e8eefc'; x.lineWidth = 1.6;
+          rocks.forEach(function (r) {
+            x.beginPath();
+            for (var k = 0; k < r.pts.length; k++) {
+              var a = r.rot + k / r.pts.length * 6.283, rr = r.r * r.pts[k];
+              if (k) x.lineTo(r.x + Math.cos(a) * rr, r.y + Math.sin(a) * rr); else x.moveTo(r.x + Math.cos(a) * rr, r.y + Math.sin(a) * rr);
+            }
+            x.closePath(); x.stroke();
+          });
+          x.fillStyle = '#ffd23f';
+          bullets.forEach(function (bl) { x.fillRect(bl.x - 1.5, bl.y - 1.5, 3, 3); });
+          if (!over && (ship.inv <= 0 || Math.floor(ship.inv * 8) % 2)) {
+            x.save(); x.translate(ship.x, ship.y); x.rotate(ship.a);
+            x.beginPath(); x.moveTo(14, 0); x.lineTo(-10, 8); x.lineTo(-5, 0); x.lineTo(-10, -8); x.closePath(); x.stroke();
+            if (ks.ArrowUp || ks.w) { x.strokeStyle = '#ff9f1c'; x.beginPath(); x.moveTo(-6, 3); x.lineTo(-15, 0); x.lineTo(-6, -3); x.stroke(); }
+            x.restore();
+          }
+        }
+        var stop = loop(frame);
+        return {
+          stop: function () { stop(); window.removeEventListener('pointerup', up); },
+          key: function (e) {
+            if (over && e.key === ' ') { reset(); return; }
+            ks[e.key] = true;
+          },
+          keyup: function (e) { ks[e.key] = false; }
+        };
+      }
+
       var GAMES = [
         { id: 'snake', name: 'Snake', icon: '🐍', desc: 'Eat, grow, do not crash', hint: 'Arrow keys / WASD or swipe', make: snake },
         { id: 'pong', name: 'Pong', icon: '🏓', desc: 'Beat the CPU to 7', hint: 'Mouse, touch, or W/S and Up/Down', make: pong },
@@ -4205,7 +4536,10 @@
         { id: 'whack', name: 'Whack-a-Mole', icon: '🔨', desc: '30 seconds of chaos', hint: 'Click the moles. Space starts', make: whack },
         { id: 'simon', name: 'Simon Says', icon: '🎵', desc: 'Repeat the pattern', hint: 'Click pads or keys 1-4. Space restarts', make: simon },
         { id: 'invaders', name: 'Space Invaders', icon: '👾', desc: 'Defend the planet', hint: 'Left/Right or mouse, Space or click to fire', make: invaders },
-        { id: 'tetris', name: 'Blocks', icon: '🟦', desc: 'Stack and clear lines', hint: 'Left/Right move, Up rotate, Down soft drop, Space hard drop', make: tetris }
+        { id: 'tetris', name: 'Blocks', icon: '🟦', desc: 'Stack and clear lines', hint: 'Left/Right move, Up rotate, Down soft drop, Space hard drop', make: tetris },
+        { id: 'connect4', name: 'Connect Four', icon: '🔴', desc: 'Line up four against the CPU', hint: 'Click a column to drop a disc. R restarts', make: connect4, isNew: true },
+        { id: 'dino', name: 'Dino Run', icon: '🦖', desc: 'Jump cacti, duck birds', hint: 'Space / Up / tap to jump, hold Down to duck', make: dino, isNew: true },
+        { id: 'asteroids', name: 'Asteroids', icon: '☄️', desc: 'Blast the space rocks', hint: 'Arrows / WASD fly, Space fires. Mouse aims, click fires', make: asteroids, isNew: true }
       ];
 
       GAMES.forEach(function (g) {
@@ -4213,6 +4547,7 @@
         b.appendChild(mk('span', 'ar-ico', g.icon));
         b.appendChild(mk('span', 'ar-name', g.name));
         b.appendChild(mk('span', 'ar-desc', g.desc));
+        if (g.isNew) b.appendChild(mk('span', 'ar-new', 'NEW'));
         b.addEventListener('click', function () { openGame(g); });
         menuEl.appendChild(b);
       });
