@@ -271,6 +271,15 @@
     color: transparent;
   }
   .site-name::before { content: "\2726  "; }
+  .site-brand { display: flex; flex-direction: column; line-height: 1.15; }
+  .site-motto {
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--nav-text);
+    opacity: 0.85;
+    letter-spacing: 0.02em;
+  }
   .site-nav {
     display: flex;
     flex-wrap: wrap;
@@ -1396,7 +1405,10 @@
   </div>
 
   <header class="site-header">
-    <div class="site-name">Nikolai</div>
+    <div class="site-brand">
+      <div class="site-name">Nikolai</div>
+      <div class="site-motto">Building worlds, one block at a time.</div>
+    </div>
     <nav class="site-nav">
       <a href="#about">About</a>
       <a href="#hobbies">Hobbies</a>
