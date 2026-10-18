@@ -1250,6 +1250,17 @@
   #mc-hotbar { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; background: rgba(0, 0, 0, 0.5); border: 3px solid #1b1b1b; }
   #mc-hotbar .mc-slot { background: rgba(60, 60, 60, 0.55); border: 2px solid #1b1b1b; }
   #mc-hotbar .mc-slot.sel { border: 3px solid #fff; background: rgba(120, 120, 120, 0.5); z-index: 1; }
+  #mc-armor { position: absolute; left: calc(50% - 206px); bottom: 88px; image-rendering: pixelated; }
+  #mc-armorrow { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font: 20px "VT323", monospace; color: #202020; }
+  #mc-armorrow .mc-slot { cursor: pointer; }
+  #mc-furnrow { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 10px 0 14px; }
+  #mc-furnrow .col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #mc-furnrow .mc-slot { cursor: pointer; }
+  #mc-furnrow .mc-slot:hover { background: #a9b6ff; }
+  .mc-flame { width: 16px; height: 16px; background: #3a3a3a; border: 2px solid #222; position: relative; overflow: hidden; }
+  .mc-flame i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, #ff3d00, #ffd23f); }
+  .mc-arrow { width: 64px; height: 16px; background: #3a3a3a; border: 2px solid #222; position: relative; }
+  .mc-arrow i { position: absolute; left: 0; top: 0; bottom: 0; background: #e8e8e8; }
   #mc-hearts { position: absolute; left: calc(50% - 206px); bottom: 66px; image-rendering: pixelated; }
   #mc-food { position: absolute; left: calc(50% + 6px); bottom: 66px; image-rendering: pixelated; }
   #mc-air { position: absolute; left: calc(50% + 6px); bottom: 88px; }
@@ -1488,6 +1499,7 @@
       <div id="mc-flash"></div>
       <div id="mc-cross"></div>
       <pre id="mc-debug"></pre>
+      <canvas id="mc-armor" width="204" height="20"></canvas>
       <canvas id="mc-hearts" width="204" height="20"></canvas>
       <canvas id="mc-food" width="204" height="20"></canvas>
       <canvas id="mc-air" width="204" height="22"></canvas>
@@ -1536,8 +1548,17 @@
     <div class="mc-screen" id="mc-inv">
       <div class="mc-invpanel">
         <div class="mc-h" id="mc-invtitle">Inventory</div>
+        <div id="mc-armorrow"></div>
         <div class="mc-grid" id="mc-invgrid"></div>
         <div id="mc-craft"></div>
+      </div>
+    </div>
+
+    <div class="mc-screen" id="mc-furn">
+      <div class="mc-invpanel">
+        <div class="mc-h">Furnace</div>
+        <div id="mc-furnrow"></div>
+        <div class="mc-grid survival" id="mc-furngrid"></div>
       </div>
     </div>
 
@@ -1556,6 +1577,7 @@
       <div class="mc-big">Shader Settings</div>
       <button class="mc-btn" id="mc-sh-master">Shaders: OFF</button>
       <button class="mc-btn" id="mc-sh-water">Realistic Water: ON</button>
+      <button class="mc-btn" id="mc-sh-phys">Water Physics: ON</button>
       <button class="mc-btn" id="mc-sh-shadow">Shadows: ON</button>
       <button class="mc-btn" id="mc-sh-quality">Shadow Quality: Medium (2048)</button>
       <div class="mc-label" id="mc-sh-note" style="max-width:340px;text-align:center"></div>
@@ -4708,6 +4730,138 @@
           setpx(d, 1, 14, 236, 232, 214); setpx(d, 2, 15, 236, 232, 214); setpx(d, 1, 15, 236, 232, 214); setpx(d, 0, 14, 214, 208, 190);
         };
       }
+      function bucketTile(filled) {
+        return function (d) {
+          itemClear(d);
+          for (var y = 4; y <= 13; y++) {
+            var inset = floor((y - 4) * 0.25) + 3;
+            for (var x = inset; x <= 15 - inset; x++) {
+              var shade = 215 - (x - inset) * 6 - (y - 4) * 3;
+              if (x === inset) shade += 18;
+              if (x === 15 - inset) shade -= 28;
+              setpx(d, x, y, shade, shade, shade + 6);
+            }
+          }
+          for (var rx = 3; rx <= 12; rx++) setpx(d, rx, 4, 96, 98, 104);
+          if (filled) {
+            for (var wx = 4; wx <= 11; wx++) { setpx(d, wx, 4, 52, 110, 235); setpx(d, wx, 5, 40, 90, 215); }
+            setpx(d, 5, 4, 140, 190, 255); setpx(d, 6, 4, 110, 165, 250);
+          } else {
+            for (var ix = 4; ix <= 11; ix++) setpx(d, ix, 4, 50, 52, 58);
+          }
+          for (var hx = 4; hx <= 11; hx++) setpx(d, hx, 13, 120, 122, 128);
+          setpx(d, 2, 5, 150, 152, 158); setpx(d, 2, 4, 150, 152, 158); setpx(d, 13, 4, 150, 152, 158); setpx(d, 13, 5, 150, 152, 158);
+        };
+      }
+      GEN.bucket = bucketTile(false);
+      GEN.water_bucket = bucketTile(true);
+
+      /* ---- ores, ingots, furnace, tools and armour textures ---- */
+      oreTile('copper_ore', [224, 128, 80], [64, 170, 140]);
+      var TIER_COL = { wood: [166, 124, 66], stone: [136, 136, 140], iron: [222, 222, 228], gold: [252, 220, 64], diamond: [84, 232, 226], copper: [220, 124, 82] };
+      function shadeCol(c, k) { return [c[0] * k, c[1] * k, c[2] * k]; }
+      function pxc(d, x, y, c) { setpx(d, x, y, c[0], c[1], c[2]); }
+      function ingotTile(name, c) {
+        GEN[name] = function (d) {
+          itemClear(d);
+          for (var y = 5; y <= 11; y++) for (var x = 2; x <= 13; x++) {
+            var skew = (y - 5) >> 1;                       // slanted parallelogram
+            var xx = x + 1 - skew;
+            if (xx < 2 || xx > 13) continue;
+            var k = 0.82 + (11 - y) * 0.04 + (x < 5 ? 0.1 : 0);
+            if (y === 11 || x === 13 - 0) k *= 0.8;
+            pxc(d, xx, y, shadeCol(c, Math.min(1.1, k)));
+          }
+          for (var h = 0; h < 4; h++) pxc(d, 4 + h, 6, shadeCol(c, 1.15));
+        };
+      }
+      ingotTile('iron_ingot', TIER_COL.iron);
+      ingotTile('gold_ingot', TIER_COL.gold);
+      ingotTile('copper_ingot', TIER_COL.copper);
+      function gemTile(name, c) {
+        GEN[name] = function (d) {
+          itemClear(d);
+          var pts = ['....XXXXXX....', '..XXXXXXXXXX..', '.XXXXXXXXXXXX.', 'XXXXXXXXXXXXXX', '.XXXXXXXXXXXX.', '..XXXXXXXXXX..', '...XXXXXXXX...', '....XXXXXX....', '.....XXXX.....', '......XX......'];
+          pts.forEach(function (row, y) {
+            for (var x = 0; x < row.length; x++) if (row[x] === 'X') {
+              var k = 0.75 + (x < 6 ? 0.25 : 0) + (y < 3 ? 0.15 : 0) - (x > 9 ? 0.2 : 0);
+              pxc(d, x + 1, y + 3, shadeCol(c, Math.min(1.15, k)));
+            }
+          });
+          pxc(d, 5, 5, [255, 255, 255]); pxc(d, 6, 5, [235, 255, 255]);
+        };
+      }
+      gemTile('diamond_gem', TIER_COL.diamond);
+      gemTile('emerald_gem', [60, 210, 100]);
+      GEN.stick = function (d) {
+        itemClear(d);
+        for (var k = 0; k < 11; k++) { pxc(d, 3 + k, 12 - k, [150, 108, 56]); pxc(d, 4 + k, 12 - k, [110, 76, 38]); }
+      };
+      GEN.coal_item = function (d, rnd) {
+        itemClear(d);
+        disc(d, 7.5, 8.5, 5, 40, 40, 44, rnd);
+        disc(d, 6, 6.5, 1.7, 84, 84, 92);
+        disc(d, 10, 10.5, 1.2, 20, 20, 24);
+      };
+      GEN.furnace_top = function (d, rnd) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var n = (rnd() - 0.5) * 12, edge = x === 0 || y === 0 || x === 15 || y === 15;
+          var v = edge ? 84 : 122 + n;
+          setpx(d, x, y, v, v, v + 2);
+        }
+      };
+      GEN.furnace_side = function (d, rnd) {
+        GEN.cobble(d, rnd);
+        for (var y = 7; y <= 12; y++) for (var x = 4; x <= 11; x++) setpx(d, x, y, 24, 24, 28);
+        for (var fx = 5; fx <= 10; fx++) { setpx(d, fx, 11, 255, 150, 30); setpx(d, fx, 12, 255, 90, 10); }
+        setpx(d, 7, 10, 255, 210, 80); setpx(d, 8, 10, 255, 190, 60); setpx(d, 6, 10, 255, 120, 20);
+        for (var gx = 4; gx <= 11; gx++) setpx(d, gx, 6, 60, 60, 66);
+      };
+      function toolTile(type, c) {
+        return function (d) {
+          itemClear(d);
+          var dark = shadeCol(c, 0.7), light = shadeCol(c, 1.12);
+          var handle = [112, 78, 40], handleL = [150, 108, 56];
+          if (type === 'sword') {
+            for (var k = 0; k < 9; k++) { pxc(d, 5 + k, 10 - k, c); pxc(d, 6 + k, 10 - k, dark); pxc(d, 5 + k, 9 - k, light); }
+            pxc(d, 14, 1, light); pxc(d, 4, 11, handle); pxc(d, 3, 12, handle); pxc(d, 2, 13, handleL);
+            for (var g = 0; g < 4; g++) { pxc(d, 3 + g, 8 + g - 0, [112, 78, 40]); }
+            pxc(d, 5, 11, handleL);
+            return;
+          }
+          for (var h = 0; h < 10; h++) { pxc(d, 2 + h, 13 - h, handle); pxc(d, 3 + h, 13 - h, handleL); }
+          var head = [];
+          if (type === 'pickaxe') head = [[4, 3], [5, 2], [6, 2], [7, 2], [8, 2], [9, 3], [10, 4], [11, 5], [12, 6], [12, 7], [3, 4], [3, 5], [5, 3], [6, 3], [7, 3], [8, 3], [9, 4], [10, 5], [11, 6]];
+          else if (type === 'axe') head = [[7, 2], [8, 2], [9, 2], [10, 3], [6, 3], [7, 3], [8, 3], [9, 3], [10, 4], [11, 4], [7, 4], [8, 4], [9, 4], [10, 5], [11, 5], [8, 5], [9, 5], [10, 6]];
+          else head = [[10, 2], [11, 2], [12, 3], [9, 3], [10, 3], [11, 3], [9, 4], [10, 4], [11, 4], [12, 4], [10, 5], [11, 5], [12, 5], [11, 6], [12, 6]];
+          head.forEach(function (p, i) { pxc(d, p[0], p[1], p[0] + p[1] < 12 ? light : (i % 3 === 0 ? dark : c)); });
+        };
+      }
+      ['wood', 'stone', 'iron', 'gold', 'diamond'].forEach(function (t) {
+        ['pickaxe', 'axe', 'shovel', 'sword'].forEach(function (ty) { GEN[t + '_' + ty] = toolTile(ty, TIER_COL[t]); });
+      });
+      var ARMOR_ART = {
+        helmet: ['................', '................', '....XXXXXXXX....', '...XXXXXXXXXX...', '..XXXXXXXXXXXX..', '..XXXXXXXXXXXX..', '..XXXX....XXXX..', '..XXX......XXX..', '................'],
+        chestplate: ['................', '..XXX......XXX..', '.XXXX.XXXX.XXXX.', '.XXXXXXXXXXXXXX.', '.XXXXXXXXXXXXXX.', '..XXXXXXXXXXXX..', '...XXXXXXXXXX...', '...XXXXXXXXXX...', '...XXXXXXXXXX...', '...XXXXXXXXXX...'],
+        leggings: ['................', '..XXXXXXXXXXXX..', '..XXXXXXXXXXXX..', '..XXXXXXXXXXXX..', '..XXXX....XXXX..', '..XXXX....XXXX..', '..XXXX....XXXX..', '..XXXX....XXXX..', '..XXXX....XXXX..'],
+        boots: ['................', '................', '................', '..XXXX....XXXX..', '..XXXX....XXXX..', '..XXXX....XXXX..', '.XXXXX....XXXXX.', '.XXXXX....XXXXX.']
+      };
+      function armorTile(slot, c) {
+        return function (d) {
+          itemClear(d);
+          var art = ARMOR_ART[slot], oy = slot === 'boots' ? 4 : 3;
+          art.forEach(function (row, y) {
+            for (var x = 0; x < row.length; x++) if (row[x] === 'X') {
+              var edge = row[x - 1] !== 'X' || row[x + 1] !== 'X' || !art[y - 1] || art[y - 1][x] !== 'X' || !art[y + 1] || art[y + 1][x] !== 'X';
+              var k = (x < 7 ? 1.08 : 0.9) * (edge ? 0.78 : 1) * (y < 3 ? 1.08 : 1);
+              pxc(d, x, y + oy, shadeCol(c, Math.min(1.15, k)));
+            }
+          });
+        };
+      }
+      ['iron', 'gold', 'diamond'].forEach(function (t) {
+        ['helmet', 'chestplate', 'leggings', 'boots'].forEach(function (sl) { GEN[t + '_' + sl] = armorTile(sl, TIER_COL[t]); });
+      });
       GEN.raw_pork = meatTile(238, 150, 150);
       GEN.cooked_pork = meatTile(150, 86, 46);
       GEN.raw_beef = meatTile(190, 58, 60);
@@ -4765,7 +4919,7 @@
           opaque: !!o.opaque, solid: !!o.solid, liquid: !!o.liquid, cross: !!o.cross, box: o.box || null,
           cut: !!o.cut, hard: o.hard === undefined ? 1 : o.hard, light: o.light || 0,
           snd: o.snd || 'stone', dropKey: o.drop, creative: o.creative !== false, replace: !!o.replace,
-          topUV: o.topUV || null, item: !!o.item, food: o.food || 0
+          topUV: o.topUV || null, item: !!o.item, food: o.food || 0, bucket: o.bucket || '', tool: o.tool || null, armor: o.armor || null
         });
       }
       def('AIR', 'Air', { all: 'stone', creative: false, replace: true });
@@ -4782,10 +4936,10 @@
       def('WATER', 'Water', { all: 'water', liquid: 1, replace: true, creative: false, hard: 100 });
       def('LAVA', 'Lava', { all: 'lava', liquid: 1, replace: true, creative: false, light: 15, hard: 100 });
       def('BEDROCK', 'Bedrock', { all: 'bedrock', opaque: 1, solid: 1, hard: -1 });
-      def('COAL', 'Coal Ore', { all: 'coal_ore', opaque: 1, solid: 1, hard: 3 });
+      def('COAL', 'Coal Ore', { all: 'coal_ore', opaque: 1, solid: 1, hard: 3, drop: 'COAL_ITEM' });
       def('IRON', 'Iron Ore', { all: 'iron_ore', opaque: 1, solid: 1, hard: 3 });
       def('GOLD', 'Gold Ore', { all: 'gold_ore', opaque: 1, solid: 1, hard: 3 });
-      def('DIAMOND', 'Diamond Ore', { all: 'diamond_ore', opaque: 1, solid: 1, hard: 3 });
+      def('DIAMOND', 'Diamond Ore', { all: 'diamond_ore', opaque: 1, solid: 1, hard: 3, drop: 'DIAMOND_GEM' });
       def('SNOW', 'Snow Block', { all: 'snow', opaque: 1, solid: 1, hard: 0.2, snd: 'snow' });
       def('ICE', 'Ice', { all: 'ice', opaque: 1, solid: 1, hard: 0.5, snd: 'glass', drop: null });
       def('BRICKS', 'Bricks', { all: 'bricks', opaque: 1, solid: 1, hard: 2 });
@@ -4814,7 +4968,7 @@
       def('BIRCHPLANKS', 'Birch Planks', { all: 'birch_planks', opaque: 1, solid: 1, hard: 2, snd: 'wood' });
       def('LAPIS', 'Lapis Ore', { all: 'lapis_ore', opaque: 1, solid: 1, hard: 3 });
       def('REDSTONE', 'Redstone Ore', { all: 'redstone_ore', opaque: 1, solid: 1, hard: 3, light: 4 });
-      def('EMERALD', 'Emerald Ore', { all: 'emerald_ore', opaque: 1, solid: 1, hard: 3 });
+      def('EMERALD', 'Emerald Ore', { all: 'emerald_ore', opaque: 1, solid: 1, hard: 3, drop: 'EMERALD_GEM' });
       def('NETHERRACK', 'Netherrack', { all: 'netherrack', opaque: 1, solid: 1, hard: 0.6 });
       def('SOULSAND', 'Soul Sand', { all: 'soulsand', opaque: 1, solid: 1, hard: 0.6, snd: 'sand' });
       def('PUMPKIN', 'Pumpkin', { top: 'pumpkin_top', bottom: 'pumpkin_top', side: 'pumpkin_side', opaque: 1, solid: 1, hard: 1, snd: 'wood' });
@@ -4832,6 +4986,45 @@
       def('RAW_BEEF', 'Raw Beef', { all: 'raw_beef', item: 1, food: 3 });
       def('COOKED_BEEF', 'Steak', { all: 'cooked_beef', item: 1, food: 8 });
       def('MELON_SLICE', 'Melon Slice', { all: 'melon_slice', item: 1, food: 2 });
+      // ---- buckets (right-click water to scoop it, right-click a surface to pour it) ----
+      def('BUCKET', 'Bucket', { all: 'bucket', item: 1, bucket: 'empty' });
+      def('WATER_BUCKET', 'Water Bucket', { all: 'water_bucket', item: 1, bucket: 'water' });
+      // ---- ores, ingots, furnace, tools and armour ----
+      def('COPPER_ORE', 'Copper Ore', { all: 'copper_ore', opaque: 1, solid: 1, hard: 3 });
+      def('FURNACE', 'Furnace', { top: 'furnace_top', bottom: 'furnace_top', side: 'furnace_side', opaque: 1, solid: 1, hard: 3.5 });
+      def('IRON_INGOT', 'Iron Ingot', { all: 'iron_ingot', item: 1 });
+      def('GOLD_INGOT', 'Gold Ingot', { all: 'gold_ingot', item: 1 });
+      def('COPPER_INGOT', 'Copper Ingot', { all: 'copper_ingot', item: 1 });
+      def('DIAMOND_GEM', 'Diamond', { all: 'diamond_gem', item: 1 });
+      def('EMERALD_GEM', 'Emerald', { all: 'emerald_gem', item: 1 });
+      def('COAL_ITEM', 'Coal', { all: 'coal_item', item: 1 });
+      def('STICK', 'Stick', { all: 'stick', item: 1 });
+      var TOOL_TIERS = {
+        wood:    { name: 'Wooden',  lvl: 0, spd: 2,  dur: 59,   bonus: 0 },
+        stone:   { name: 'Stone',   lvl: 1, spd: 4,  dur: 131,  bonus: 1 },
+        iron:    { name: 'Iron',    lvl: 2, spd: 6,  dur: 250,  bonus: 2 },
+        gold:    { name: 'Golden',  lvl: 0, spd: 12, dur: 32,   bonus: 0 },
+        diamond: { name: 'Diamond', lvl: 3, spd: 8,  dur: 1561, bonus: 3 }
+      };
+      var TOOL_BASE = { pickaxe: [2, 'Pickaxe'], axe: [3, 'Axe'], shovel: [1.5, 'Shovel'], sword: [4, 'Sword'] };
+      Object.keys(TOOL_TIERS).forEach(function (t) {
+        var T = TOOL_TIERS[t];
+        Object.keys(TOOL_BASE).forEach(function (ty) {
+          def((t + '_' + ty).toUpperCase(), T.name + ' ' + TOOL_BASE[ty][1], { all: t + '_' + ty, item: 1, tool: { type: ty, tier: t, lvl: T.lvl, spd: T.spd, dur: T.dur, dmg: TOOL_BASE[ty][0] + T.bonus } });
+        });
+      });
+      var ARMOR_SLOTS = ['helmet', 'chestplate', 'leggings', 'boots'], ARMOR_NAMES = ['Helmet', 'Chestplate', 'Leggings', 'Boots'];
+      var ARMOR_TIERS = {
+        iron:    { name: 'Iron',    def: [2, 6, 5, 2], mult: 15 },
+        gold:    { name: 'Golden',  def: [2, 5, 3, 1], mult: 7 },
+        diamond: { name: 'Diamond', def: [3, 8, 6, 3], mult: 33 }
+      };
+      var ARMOR_BASE_DUR = [11, 16, 15, 13];
+      Object.keys(ARMOR_TIERS).forEach(function (t) {
+        ARMOR_SLOTS.forEach(function (sl, i) {
+          def((t + '_' + sl).toUpperCase(), ARMOR_TIERS[t].name + ' ' + ARMOR_NAMES[i], { all: t + '_' + sl, item: 1, armor: { slot: i, def: ARMOR_TIERS[t].def[i], dur: ARMOR_BASE_DUR[i] * ARMOR_TIERS[t].mult } });
+        });
+      });
       for (var di = 0; di < 10; di++) tile('destroy_' + di);
       var NB = BL.length;
       BL.forEach(function (b) {
@@ -4905,6 +5098,7 @@
           seed: s | 0,
           chunks: new Map(),
           edits: {},
+          flow: {}, wq: [], wqs: {}, furn: {},
           nCont: makeNoise(s + 1), nHill: makeNoise(s + 2), nMount: makeNoise(s + 3),
           nTemp: makeNoise(s + 4), nHum: makeNoise(s + 5), nCaveA: makeNoise(s + 6),
           nCaveB: makeNoise(s + 7), nCaveC: makeNoise(s + 8), nMisc: makeNoise(s + 9)
@@ -4989,7 +5183,7 @@
 
         // ores
         var ores = [[B.COAL, 22, 7, 4, 74], [B.IRON, 16, 5, 4, 54], [B.GOLD, 4, 5, 4, 30], [B.DIAMOND, 3, 4, 4, 16],
-          [B.LAPIS, 3, 6, 4, 30], [B.REDSTONE, 7, 6, 4, 16], [B.EMERALD, 2, 2, 4, 28]];
+          [B.LAPIS, 3, 6, 4, 30], [B.REDSTONE, 7, 6, 4, 16], [B.EMERALD, 2, 2, 4, 28], [B.COPPER_ORE, 14, 6, 4, 60]];
         ores.forEach(function (o) {
           for (var t = 0; t < o[1]; t++) {
             var ox = floor(rng() * CH), oy = o[3] + floor(rng() * (o[4] - o[3])), oz = floor(rng() * CH);
@@ -5355,14 +5549,27 @@
         void t;
       }
 
+      // flowing water is lower the further it is from its source (level 1..7); falling water (-1) is full height
+      function liqHeight(wx, y, wz, covered) {
+        if (covered) return 1;
+        var l = world.flow[wx + ',' + y + ',' + wz];
+        return l > 0 ? 0.875 - (l - 1) * 0.095 : (l === -1 ? 1 : 0.875);
+      }
+      var meshChunk = null;
       function emitLiquid(id, x, y, z, pi) {
         var d = BL[id], m = id === B.WATER ? bufWt : bufOp;
         var t = d.tSide, u0 = tileU(t) + UVE, v0 = tileV(t) + UVE, sz = 1 / 16 - UVE * 2;
         var above = pb[pi + PW * PW];
-        var h = (above === id) ? 1 : 0.875;
+        var isW = id === B.WATER, wx = meshChunk.cx * 16 + x, wz = meshChunk.cz * 16 + z;
+        var h = isW ? liqHeight(wx, y, wz, above === id) : (above === id ? 1 : 0.875);
         for (var f = 0; f < 6; f++) {
           var n = FACE_N[f], ni = pi + n[0] + n[2] * PW + n[1] * PW * PW, nb = pb[ni];
-          if (nb === id || OPAQUE[nb]) continue;
+          if (OPAQUE[nb]) continue;
+          if (nb === id) {
+            // between two water cells, only draw the step where the neighbour is lower
+            if (!isW || f === 2 || f === 3) continue;
+            if (liqHeight(wx + n[0], y, wz + n[2], pb[ni + PW * PW] === id) >= h - 0.001) continue;
+          }
           if (f === 2 && above === id) continue;
           var l = (f === 2) ? pl[pi] : pl[ni];
           if (f === 2 && (l >> 4) === 0 && (pl[ni] >> 4) > 0) l = pl[ni];
@@ -5377,6 +5584,7 @@
       }
 
       function buildMesh(chunk) {
+        meshChunk = chunk;
         fillPadded(chunk);
         bufOp.nv = bufOp.ni = 0; bufWt.nv = bufWt.ni = 0;
         for (var y = 0; y < WH; y++) for (var z = 0; z < CH; z++) for (var x = 0; x < CH; x++) {
@@ -5588,15 +5796,38 @@
               'void main(){ if(texture2D(uTex, vUV).a < 0.5) discard; gl_FragColor = packD(min(gl_FragCoord.z, 0.99999)); }',
               ['aPos', 'aUV']);
 
+            // Water physics: deep-water dispersion (omega = sqrt(g*k)) so long waves outrun short ones,
+            // plus expanding ring ripples where the player splashes or swims.
+            var PHYS_GLSL =
+              'uniform float uPhys; uniform vec4 uRip0; uniform vec4 uRip1; uniform vec4 uRip2; uniform vec4 uRip3;\n' +
+              'vec3 pw(vec2 p, vec2 dir, float k, float a, float t){ float ph = dot(p, dir) * k - sqrt(9.81 * k) * t;\n' +
+              ' return vec3(a * sin(ph), a * k * cos(ph) * dir.x, a * k * cos(ph) * dir.y); }\n' +
+              'vec3 physWaves(vec2 p, float t){ vec3 s = vec3(0.0);\n' +
+              ' s += pw(p, normalize(vec2( 1.0,  0.6)), 0.9, 0.040,  t);\n' +
+              ' s += pw(p, normalize(vec2(-0.5,  0.9)), 1.7, 0.026,  t);\n' +
+              ' s += pw(p, normalize(vec2( 0.9, -0.3)), 3.1, 0.014,  t);\n' +
+              ' s += pw(p, normalize(vec2(-0.3, -0.9)), 5.6, 0.007,  t);\n' +
+              ' s += pw(p, normalize(vec2( 0.6, -0.8)), 9.8, 0.0035, t);\n' +
+              ' return s; }\n' +
+              'vec3 ripple(vec2 p, vec4 r, float t){ float age = t - r.z; if(r.w <= 0.0 || age < 0.0 || age > 6.0) return vec3(0.0);\n' +
+              ' vec2 d = p - r.xy; float dist = length(d) + 0.0001; float x = dist - 2.2 * age;\n' +
+              ' float e = exp(-0.35 * x * x); float att = r.w * 0.06 * exp(-0.7 * age) / (1.0 + 0.8 * dist);\n' +
+              ' float h = sin(7.0 * x) * e * att; float dh = e * (7.0 * cos(7.0 * x) - 0.7 * x * sin(7.0 * x)) * att;\n' +
+              ' return vec3(h, dh * d / dist); }\n' +
+              'vec3 allRipples(vec2 p, float t){ return ripple(p, uRip0, t) + ripple(p, uRip1, t) + ripple(p, uRip2, t) + ripple(p, uRip3, t); }\n';
+
             progWater = makeProgram(
               'attribute vec3 aPos; attribute vec2 aUV; attribute vec3 aLight;\n' +
               'uniform mat4 uVP; uniform vec3 uOff; uniform vec3 uCam; uniform float uTime;\n' +
+              PHYS_GLSL +
               'varying vec2 vUV; varying vec3 vL; varying float vDist; varying vec3 vW;\n' +
               'void main(){ vec3 wp = aPos + uOff;\n' +
-              ' wp.y += sin(wp.x * 1.1 + uTime * 1.5) * 0.028 + cos(wp.z * 0.9 + uTime * 1.2) * 0.028 + sin((wp.x + wp.z) * 2.3 + uTime * 2.1) * 0.012;\n' +
+              ' if(uPhys > 0.5) wp.y += physWaves(wp.xz, uTime).x + allRipples(wp.xz, uTime).x;\n' +
+              ' else wp.y += sin(wp.x * 1.1 + uTime * 1.5) * 0.028 + cos(wp.z * 0.9 + uTime * 1.2) * 0.028 + sin((wp.x + wp.z) * 2.3 + uTime * 2.1) * 0.012;\n' +
               ' vUV = aUV; vL = aLight; vW = wp; vDist = length(wp - uCam); gl_Position = uVP * vec4(wp, 1.0); }',
               HP_FRAG + FOG_GLSL +
               'uniform sampler2D uTex; uniform float uSky; uniform float uTime; uniform vec3 uCam; uniform vec3 uSunDir; uniform vec3 uSkyTop; uniform vec3 uHorizon; uniform float uSunK;\n' +
+              PHYS_GLSL +
               'varying vec2 vUV; varying vec3 vL; varying float vDist; varying vec3 vW;\n' +
               'vec2 waveGrad(vec2 p, float t){ vec2 g = vec2(0.0);\n' +
               ' g += 0.050 * 1.3  * cos(dot(p, vec2( 0.80,  0.60)) * 1.3  + t * 1.1) * vec2( 0.80,  0.60);\n' +
@@ -5609,7 +5840,11 @@
               ' bool isTop = vL.x > 0.95;\n' +
               ' vec3 V = normalize(uCam - vW);\n' +
               ' vec3 N = vec3(0.0, 1.0, 0.0);\n' +
-              ' if(isTop){ vec2 g = waveGrad(vW.xz, uTime); N = normalize(vec3(-g.x * 1.6, 1.0, -g.y * 1.6)); }\n' +
+              ' float foam = 0.0;\n' +
+              ' if(isTop){\n' +
+              '  if(uPhys > 0.5){ vec3 w = physWaves(vW.xz, uTime) + allRipples(vW.xz, uTime);\n' +
+              '   N = normalize(vec3(-w.y * 2.2, 1.0, -w.z * 2.2)); foam = smoothstep(0.055, 0.09, w.x); }\n' +
+              '  else { vec2 g = waveGrad(vW.xz, uTime); N = normalize(vec3(-g.x * 1.6, 1.0, -g.y * 1.6)); } }\n' +
               ' float cosT = clamp(dot(N, V), 0.0, 1.0);\n' +
               ' float F = 0.02 + 0.98 * pow(1.0 - cosT, 5.0);\n' +
               ' vec3 R = reflect(-V, N); R.y = abs(R.y);\n' +
@@ -5622,7 +5857,9 @@
               ' vec3 refr = mix(deep, tex.rgb * 0.9, cosT * 0.5 + 0.12) * br * max(vL.x, 0.5);\n' +
               ' float skyVis = smoothstep(0.2, 0.9, vL.y) * (0.2 + 0.8 * uSky);\n' +
               ' vec3 col = isTop ? mix(refr, mix(refr, refl, skyVis), F) : refr;\n' +
+              ' col = mix(col, vec3(0.95, 0.98, 1.0) * br * max(vL.x, 0.5), foam * 0.55);\n' +
               ' float a = isTop ? mix(0.6, 0.97, F) : 0.82;\n' +
+              ' a = max(a, foam * 0.95);\n' +
               ' a = mix(a, 0.97, clamp(vDist / 70.0, 0.0, 1.0) * 0.5);\n' +
               ' float f = clamp((vDist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);\n' +
               ' gl_FragColor = vec4(mix(col, uFogColor, f), a); }',
@@ -6058,7 +6295,8 @@
         x: 0, y: 80, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, w: 0.3, h: 1.8, eye: 1.62,
         onGround: false, inWater: false, headWater: false, flying: false, sneak: false, sprint: false,
         health: 20, air: 300, fallDist: 0, dead: false, hurtT: 0, mode: 'creative', regen: 0, step: 0, drownT: 0,
-        food: 20, sat: 5, exh: 0, starveT: 0, cactusT: 0, voidT: 0, lavaT: 0, eatT: 0
+        food: 20, sat: 5, exh: 0, starveT: 0, cactusT: 0, voidT: 0, lavaT: 0, eatT: 0,
+        armor: [null, null, null, null]
       };
       var keys = {};
       var inv = new Array(36).fill(null), sel = 0;
@@ -6128,12 +6366,63 @@
         var i, s, add;
         for (i = 0; i < 36 && n > 0; i++) {
           s = inv[i];
-          if (s && s.id === id && s.count < 64) { add = min(64 - s.count, n); s.count += add; n -= add; }
+          if (s && s.id === id && s.count < maxStack(id) && !s.d) { add = min(maxStack(id) - s.count, n); s.count += add; n -= add; }
         }
         for (i = 0; i < 36 && n > 0; i++) {
-          if (!inv[i]) { add = min(64, n); inv[i] = { id: id, count: add }; n -= add; }
+          if (!inv[i]) { add = min(maxStack(id), n); inv[i] = { id: id, count: add }; n -= add; }
         }
         return n;
+      }
+      function maxStack(id) { var b = BL[id]; return (b.tool || b.armor) ? 1 : 64; }
+      function heldTool() { var s = inv[sel]; return s && BL[s.id].tool ? BL[s.id].tool : null; }
+      // tools and armour wear out; stack.d is the damage taken so far
+      function wearHeld(n) {
+        var s = inv[sel];
+        if (!s || player.mode !== 'survival') return;
+        var t = BL[s.id].tool;
+        if (!t) return;
+        s.d = (s.d || 0) + n;
+        if (s.d >= t.dur) { inv[sel] = null; mobSound('pop'); }
+        refreshHotbar();
+      }
+      function blockToolType(b) {
+        if (b.key === 'GRASS' || b.key === 'SNOWGRASS') return 'shovel';
+        if (b.snd === 'stone') return 'pickaxe';
+        if (b.snd === 'wood') return 'axe';
+        if (b.snd === 'dirt' || b.snd === 'sand' || b.snd === 'gravel' || b.snd === 'snow') return 'shovel';
+        return '';
+      }
+      // minimum pickaxe level an ore needs before it drops anything
+      var ORE_REQ = { COPPER_ORE: 1, IRON: 1, LAPIS: 1, GOLD: 2, REDSTONE: 2, DIAMOND: 2, EMERALD: 2, OBSIDIAN: 3 };
+      function canHarvest(b) {
+        var r = ORE_REQ[b.key];
+        if (r === undefined) return true;
+        var t = heldTool();
+        return !!t && t.type === 'pickaxe' && t.lvl >= r;
+      }
+      function attackDmg() { var t = heldTool(); return t ? t.dmg : 2; }
+      function armorDefense() {
+        var tot = 0;
+        player.armor.forEach(function (a) { if (a) tot += BL[a.id].armor.def; });
+        return tot;
+      }
+      function applyArmor(n) {
+        var def = armorDefense();
+        if (!def) return n;
+        player.armor.forEach(function (a, i) {
+          if (!a) return;
+          a.d = (a.d || 0) + 1;
+          if (a.d >= BL[a.id].armor.dur) { player.armor[i] = null; mobSound('pop'); }
+        });
+        drawArmor(true);
+        return max(1, Math.round(n * (1 - min(20, def) * 0.04)));
+      }
+      function equipArmor(idx) {
+        var s = inv[idx], a = BL[s.id].armor, old = player.armor[a.slot];
+        player.armor[a.slot] = { id: s.id, d: s.d || 0 };
+        inv[idx] = old ? { id: old.id, count: 1, d: old.d || 0 } : null;
+        mobSound('click'); refreshHotbar(); drawArmor(true);
+        return true;
       }
       function takeSelected() {
         var s = inv[sel];
@@ -6152,6 +6441,7 @@
       function hurtPlayer(n, kbx, kbz, force) {
         var p = player;
         if (p.mode !== 'survival' || p.dead || n <= 0 || (p.hurtT > 0 && !force)) return;
+        if (!force) n = applyArmor(n);
         p.health -= n;
         p.exh += 0.1;
         p.hurtT = max(p.hurtT, 0.5);
@@ -6163,6 +6453,12 @@
 
       /* ---------------- player update ---------------- */
       var lastSpaceT = -1, spaceDown = false;
+      var ripples = [{ x: 0, z: 0, t: 0, a: 0 }, { x: 0, z: 0, t: 0, a: 0 }, { x: 0, z: 0, t: 0, a: 0 }, { x: 0, z: 0, t: 0, a: 0 }], rippleNext = 0, lastRipple = -1;
+      function addRipple(x, z, amp) {
+        ripples[rippleNext] = { x: x, z: z, t: elapsed, a: amp };
+        rippleNext = (rippleNext + 1) & 3;
+        lastRipple = elapsed;
+      }
       function updatePlayer(dt) {
         var p = player;
         if (p.dead) return;
@@ -6172,6 +6468,22 @@
         p.headWater = getBlock(bx, floor(p.y + p.eye), bz) === B.WATER;
         var inLava = getBlock(bx, floor(p.y + 0.3), bz) === B.LAVA || getBlock(bx, floor(p.y + 1.0), bz) === B.LAVA;
         if (p.inWater && !wasInWater && p.vy < -4) mobSound('splash');
+        // water physics: splash on entry, wake while swimming at the surface
+        if (p.inWater && !p.headWater) {
+          var sp = sqrt(p.vx * p.vx + p.vz * p.vz);
+          if (!wasInWater && p.vy < -2) addRipple(p.x, p.z, min(1.6, -p.vy / 8));
+          else if (sp > 0.6 && elapsed - lastRipple > 0.3) addRipple(p.x, p.z, min(0.7, sp / 6));
+        }
+
+        // current: flowing water carries the player downstream
+        if (p.inWater && wlevel(bx, floor(p.y + 0.4), bz) !== 0) {
+          var fy = floor(p.y + 0.4), fl = wlevel(bx, fy, bz), fx = 0, fz = 0;
+          WDIRS.forEach(function (o) {
+            var nb = getBlock(bx + o[0], fy, bz + o[2]), nl = wlevel(bx + o[0], fy, bz + o[2]);
+            if ((nb === B.WATER && nl > fl && fl > 0) || (nb === 0 && fl > 0)) { fx += o[0]; fz += o[2]; }
+          });
+          p.vx += fx * 6 * dt; p.vz += fz * 6 * dt;
+        }
 
         var f = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), r = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
         p.sneak = !!(keys.ShiftLeft || keys.ShiftRight) && !p.flying;
@@ -6587,7 +6899,15 @@
           cv.width = cv.height = 32;
           cv.getContext('2d').drawImage(blockIcon(stack.id), 0, 0);
           d.appendChild(cv);
-          if (showCount !== false && player.mode === 'survival' && stack.count > 1) {
+          var wb = BL[stack.id].tool || BL[stack.id].armor;
+          if (wb && stack.d > 0) {
+            var bar = document.createElement('div'), fr = max(0, 1 - stack.d / wb.dur);
+            bar.style.cssText = 'position:absolute;left:4px;right:4px;bottom:3px;height:3px;background:#111';
+            var fill = document.createElement('i');
+            fill.style.cssText = 'display:block;height:100%;width:' + Math.round(fr * 100) + '%;background:hsl(' + Math.round(fr * 120) + ',90%,50%)';
+            bar.appendChild(fill); d.appendChild(bar);
+          }
+          if (showCount !== false && (player.mode === 'survival' || showCount === true) && stack.count > 1) {
             var s = document.createElement('span');
             s.textContent = stack.count;
             d.appendChild(s);
@@ -6631,18 +6951,37 @@
         { out: [B.CRAFT, 1], inp: [[B.PLANKS, 4]] },
         { out: [B.SANDSTONE, 1], inp: [[B.SAND, 4]] },
         { out: [B.BOOKSHELF, 1], inp: [[B.PLANKS, 6]] },
-        { out: [B.TORCH, 4], inp: [[B.COAL, 1], [B.PLANKS, 1]] },
+        { out: [B.TORCH, 4], inp: [[B.COAL_ITEM, 1], [B.PLANKS, 1]] },
         { out: [B.GLASS, 2], inp: [[B.SAND, 2]] },
         { out: [B.BRICKS, 1], inp: [[B.COBBLE, 2], [B.DIRT, 1]] },
         { out: [B.BIRCHPLANKS, 4], inp: [[B.BIRCHLOG, 1]] },
         { out: [B.STONEBRICK, 4], inp: [[B.STONE, 4]] },
         { out: [B.SEALANTERN, 1], inp: [[B.GLOW, 1], [B.GLASS, 1]] },
-        { out: [B.IRONBLK, 1], inp: [[B.IRON, 9]] },
-        { out: [B.GOLDBLK, 1], inp: [[B.GOLD, 9]] },
-        { out: [B.DIAMONDBLK, 1], inp: [[B.DIAMOND, 9]] },
-        { out: [B.COOKED_PORK, 1], inp: [[B.RAW_PORK, 1], [B.COAL, 1]] },
-        { out: [B.COOKED_BEEF, 1], inp: [[B.RAW_BEEF, 1], [B.COAL, 1]] }
+        { out: [B.IRONBLK, 1], inp: [[B.IRON_INGOT, 9]] },
+        { out: [B.GOLDBLK, 1], inp: [[B.GOLD_INGOT, 9]] },
+        { out: [B.DIAMONDBLK, 1], inp: [[B.DIAMOND_GEM, 9]] },
+        { out: [B.COOKED_PORK, 1], inp: [[B.RAW_PORK, 1], [B.COAL_ITEM, 1]] },
+        { out: [B.COOKED_BEEF, 1], inp: [[B.RAW_BEEF, 1], [B.COAL_ITEM, 1]] },
+        { out: [B.BUCKET, 1], inp: [[B.IRON_INGOT, 3]] },
+        { out: [B.STICK, 4], inp: [[B.PLANKS, 2]] },
+        { out: [B.STICK, 4], inp: [[B.BIRCHPLANKS, 2]] },
+        { out: [B.FURNACE, 1], inp: [[B.COBBLE, 8]] }
       ];
+      (function () {
+        var mats = { wood: B.PLANKS, stone: B.COBBLE, iron: B.IRON_INGOT, gold: B.GOLD_INGOT, diamond: B.DIAMOND_GEM };
+        var need = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1] };
+        Object.keys(mats).forEach(function (t) {
+          Object.keys(need).forEach(function (ty) {
+            RECIPES.push({ out: [B[(t + '_' + ty).toUpperCase()], 1], inp: [[mats[t], need[ty][0]], [B.STICK, need[ty][1]]] });
+          });
+        });
+        var cost = [5, 8, 7, 4];
+        ['iron', 'gold', 'diamond'].forEach(function (t) {
+          ARMOR_SLOTS.forEach(function (sl, i) {
+            RECIPES.push({ out: [B[(t + '_' + sl).toUpperCase()], 1], inp: [[mats[t], cost[i]]] });
+          });
+        });
+      })();
       function countItem(id) { var n = 0; inv.forEach(function (s) { if (s && s.id === id) n += s.count; }); return n; }
       function removeItem(id, n) {
         for (var i = 35; i >= 0 && n > 0; i--) {
@@ -6652,6 +6991,7 @@
       }
       function refreshInventory() {
         var creative = player.mode === 'creative';
+        refreshArmorRow();
         el.invTitle.textContent = creative ? 'Creative Inventory' : 'Inventory';
         el.invGrid.innerHTML = '';
         el.invGrid.className = 'mc-grid ' + (creative ? 'creative' : 'survival');
@@ -6661,7 +7001,7 @@
             var s = makeSlot({ id: b.id, count: 1 }, false);
             s.title = b.name;
             s.addEventListener('click', function () {
-              inv[sel] = { id: b.id, count: 64 };
+              inv[sel] = { id: b.id, count: maxStack(b.id) };
               refreshHotbar(); showItemName(); mobSound('click');
             });
             el.invGrid.appendChild(s);
@@ -6704,15 +7044,16 @@
         var s = inv[i], c = cursor;
         if (!c) { if (s) { cursor = s; inv[i] = null; } }
         else if (!s) { inv[i] = c; cursor = null; }
-        else if (s.id === c.id) { var add = min(64 - s.count, c.count); s.count += add; c.count -= add; if (c.count <= 0) cursor = null; }
+        else if (s.id === c.id && maxStack(s.id) > 1 && !s.d && !c.d) { var add = min(64 - s.count, c.count); s.count += add; c.count -= add; if (c.count <= 0) cursor = null; }
         else { inv[i] = c; cursor = s; }
         mobSound('click');
-        refreshInventory(); refreshHotbar();
+        if (state === 'furnace') refreshFurnace(true); else refreshInventory();
+        refreshHotbar();
       }
       var mouseX = 0, mouseY = 0;
       function updateCursor() {
         el.cursor.innerHTML = '';
-        if (cursor && state === 'inventory') {
+        if (cursor && (state === 'inventory' || state === 'furnace')) {
           el.cursor.appendChild(makeSlot(cursor));
           el.cursor.style.display = 'block';
           el.cursor.style.left = (mouseX - 18) + 'px';
@@ -6754,13 +7095,13 @@
         saveIndex(list);
       }
       function saveGame() {
-        if (!world || !curWorld || (state !== 'playing' && state !== 'paused' && state !== 'inventory' && state !== 'dead')) return false;
+        if (!world || !curWorld || (state !== 'playing' && state !== 'paused' && state !== 'inventory' && state !== 'furnace' && state !== 'dead')) return false;
         try {
           var p = player;
           var data = JSON.stringify({
             v: 2, id: curWorld.id, name: curWorld.name, seed: world.seed, mode: p.mode, time: gameTime, sel: sel, inv: inv,
             p: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch, health: p.dead ? 20 : p.health, flying: p.flying, food: p.dead ? 20 : p.food, sat: p.sat },
-            edits: world.edits
+            edits: world.edits, flow: world.flow, furn: world.furn, armor: player.armor
           });
           localStorage.setItem(WORLD_PREFIX + curWorld.id, data);
           var list = loadIndex(), entry = null;
@@ -6838,7 +7179,9 @@
         $('mc-sh-water').textContent = 'Realistic Water: ' + (shaders.water ? 'ON' : 'OFF');
         $('mc-sh-shadow').textContent = 'Shadows: ' + (shaders.shadows ? 'ON' : 'OFF');
         $('mc-sh-quality').textContent = 'Shadow Quality: ' + Q_NAMES[shaders.q];
+        $('mc-sh-phys').textContent = 'Water Physics: ' + (shaders.phys ? 'ON' : 'OFF');
         ['mc-sh-water', 'mc-sh-shadow', 'mc-sh-quality'].forEach(function (id) { $(id).disabled = !shaders.on; });
+        $('mc-sh-phys').disabled = !shaders.on || !shaders.water;
         $('mc-sh-note').textContent = !fxOK ? 'Your graphics card could not build the shader pack.' :
           (shaders.on ? 'Shader pack active. Shadows follow the sun; water reflects the sky.' : 'Shaders are off: the base game looks the same as always.');
       }
@@ -6890,12 +7233,15 @@
         if (saved) {
           newWorld(saved.seed);
           world.edits = saved.edits || {};
+          world.flow = saved.flow || {};
+          world.furn = saved.furn || {};
         } else {
           newWorld(seedStr ? seedStr : floor(Math.random() * 1e9));
         }
         spawn = findSpawn();
         player.mode = mode;
         resetPlayer();
+        player.armor = (saved && saved.armor && saved.armor.length === 4) ? saved.armor : [null, null, null, null];
         if (saved) {
           var sp = saved.p;
           player.x = sp.x; player.y = sp.y; player.z = sp.z; player.yaw = sp.yaw; player.pitch = sp.pitch;
@@ -7003,24 +7349,288 @@
         setBlock(x, y, z, 0);
         spawnBlockParticles(x, y, z, id, 18);
         blockSound(d.snd, 'break');
-        if (player.mode === 'survival' && d.drop) dropItem(d.drop, x + 0.5, y + 0.4, z + 0.5);
+        if (id === B.FURNACE) {
+          var fd = world.furn[fkey(x, y, z)];
+          if (fd) { ['a', 'f', 'o'].forEach(function (part) { var st = fd[part]; for (var q = 0; st && q < st.count; q++) dropItem(st.id, x + 0.5, y + 0.4, z + 0.5); }); delete world.furn[fkey(x, y, z)]; }
+        }
+        if (player.mode === 'survival' && d.hard > 0) wearHeld(1);
+        if (player.mode === 'survival' && d.drop && canHarvest(d)) dropItem(d.drop, x + 0.5, y + 0.4, z + 0.5);
         else if (player.mode === 'survival' && id === B.LEAVES && Math.random() < 0.08) dropItem(B.APPLE, x + 0.5, y + 0.4, z + 0.5);
         else if (player.mode === 'survival' && id === B.MELON) for (var ms = 0, nm = 3 + floor(Math.random() * 4); ms < nm; ms++) dropItem(B.MELON_SLICE, x + 0.5, y + 0.4, z + 0.5);
         // plants / torches above pop off
         var above = getBlock(x, y + 1, z);
         if (above && (BL[above].cross)) breakBlock(x, y + 1, z);
-        // water pours into the hole
-        [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]].forEach(function (o) {
-          if (getBlock(x + o[0], y + o[1], z + o[2]) === B.WATER && (o[1] === 1 || true)) setBlock(x, y, z, B.WATER);
+        // neighbouring water flows into the hole
+        wakeWater(x, y, z);
+      }
+
+      /* ---------------- flowing water ---------------- */
+      // Sources have no flow entry. world.flow["x,y,z"] = 1..7 (distance from a source) or -1 (falling).
+      var WDIRS = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]], waterAcc = 0;
+      function fkey(x, y, z) { return x + ',' + y + ',' + z; }
+      function wlevel(x, y, z) { var v = world.flow[fkey(x, y, z)]; return v === undefined ? 0 : v; }
+      function wake(x, y, z) {
+        var k = fkey(x, y, z);
+        if (!world.wqs[k]) { world.wqs[k] = 1; world.wq.push([x, y, z]); }
+      }
+      function wakeWater(x, y, z) {
+        wake(x, y, z); wake(x + 1, y, z); wake(x - 1, y, z); wake(x, y, z + 1); wake(x, y, z - 1); wake(x, y + 1, z); wake(x, y - 1, z);
+      }
+      function remeshAt(x, z) {
+        var lx = x & 15, lz = z & 15;
+        markDirty(x >> 4, z >> 4, false);
+        if (lx === 0) markDirty((x >> 4) - 1, z >> 4, false); else if (lx === 15) markDirty((x >> 4) + 1, z >> 4, false);
+        if (lz === 0) markDirty(x >> 4, (z >> 4) - 1, false); else if (lz === 15) markDirty(x >> 4, (z >> 4) + 1, false);
+      }
+      function setWater(x, y, z, lvl) {
+        if (getBlock(x, y, z) !== B.WATER && !setBlock(x, y, z, B.WATER)) return false;
+        world.flow[fkey(x, y, z)] = lvl;
+        remeshAt(x, z);
+        return true;
+      }
+      function removeWater(x, y, z) {
+        delete world.flow[fkey(x, y, z)];
+        setBlock(x, y, z, 0);
+        remeshAt(x, z);
+        wakeWater(x, y, z);
+      }
+      function canFlowInto(id) { return id === 0 || (BL[id].replace && !LIQUID[id]); }
+      function stepWater(x, y, z) {
+        var k = fkey(x, y, z);
+        if (getBlock(x, y, z) !== B.WATER) { delete world.flow[k]; return; }
+        var L = wlevel(x, y, z), i, o, nx, nz;
+        if (L !== 0) {
+          // a flowing cell survives only while a source / higher cell / water above feeds it
+          var want = null;
+          if (getBlock(x, y + 1, z) === B.WATER) want = -1;
+          else {
+            var best = 99;
+            for (i = 0; i < 4; i++) {
+              o = WDIRS[i]; nx = x + o[0]; nz = z + o[2];
+              if (getBlock(nx, y, nz) !== B.WATER) continue;
+              var nl = wlevel(nx, y, nz), feed = nl <= 0 ? 1 : nl + 1;
+              if (nl === -1 && canFlowInto(getBlock(nx, y - 1, nz))) continue; // still falling, hasn't landed
+              if (feed < best) best = feed;
+            }
+            if (best <= 7) want = best;
+          }
+          if (want === null) { removeWater(x, y, z); return; }
+          if (want !== L) {
+            world.flow[k] = want; L = want; remeshAt(x, z);
+            for (i = 0; i < 4; i++) wake(x + WDIRS[i][0], y, z + WDIRS[i][2]);
+          }
+        }
+        var below = getBlock(x, y - 1, z);
+        if (y > 0 && canFlowInto(below)) { if (setWater(x, y - 1, z, -1)) wake(x, y - 1, z); return; }
+        if (below === B.WATER) return;
+        var nextL = L <= 0 ? 1 : L + 1;
+        if (nextL > 7) return;
+        for (i = 0; i < 4; i++) {
+          o = WDIRS[i]; nx = x + o[0]; nz = z + o[2];
+          var nb = getBlock(nx, y, nz);
+          if (canFlowInto(nb)) { if (setWater(nx, y, nz, nextL)) wake(nx, y, nz); }
+          else if (nb === B.WATER && wlevel(nx, y, nz) > nextL) wake(nx, y, nz);
+        }
+      }
+      function tickWater(dt) {
+        waterAcc += dt;
+        if (waterAcc < 0.15 || !world.wq.length) return;
+        waterAcc = 0;
+        var batch = world.wq.splice(0, 40);
+        batch.forEach(function (c) { delete world.wqs[fkey(c[0], c[1], c[2])]; });
+        batch.forEach(function (c) { stepWater(c[0], c[1], c[2]); });
+      }
+
+      /* ---------------- armour HUD and slots ---------------- */
+      var SHIELD = ['XXXXXXXXX', 'XXXXXXXXX', 'XXXXXXXXX', 'XXXXXXXXX', 'XXXXXXXXX', '.XXXXXXX.', '..XXXXX..', '...XXX...', '....X....'];
+      var lastArmor = -1;
+      function drawArmor(force) {
+        var def = armorDefense(), key = def + (player.mode === 'survival' ? 0 : 1000);
+        if (!force && key === lastArmor) return;
+        lastArmor = key;
+        var cv = $('mc-armor'), c = cv.getContext('2d');
+        c.clearRect(0, 0, cv.width, cv.height);
+        if (player.mode !== 'survival' || !def) return;
+        for (var i = 0; i < 10; i++) {
+          var full = def >= (i + 1) * 2, half = !full && def >= i * 2 + 1;
+          for (var r = 0; r < 9; r++) for (var q = 0; q < 9; q++) {
+            if (SHIELD[r][q] !== 'X') continue;
+            c.fillStyle = (full || (half && q < 5)) ? (r < 2 ? '#e6edf7' : '#a9b8cc') : '#2a2f3a';
+            c.fillRect(i * 20 + 1 + q * 2, 1 + r * 2, 2, 2);
+          }
+        }
+      }
+      function refreshArmorRow() {
+        var row = $('mc-armorrow');
+        row.innerHTML = '';
+        if (player.mode !== 'survival') return;
+        var lab = document.createElement('span');
+        lab.textContent = 'Armor ' + armorDefense() + '  ';
+        row.appendChild(lab);
+        player.armor.forEach(function (a, i) {
+          var slot = makeSlot(a ? { id: a.id, count: 1, d: a.d || 0 } : null);
+          slot.title = ARMOR_NAMES[i];
+          slot.addEventListener('click', function () { armorClick(i); });
+          row.appendChild(slot);
         });
+      }
+      function armorClick(i) {
+        var a = player.armor[i], c = cursor;
+        if (!c) { if (a) { cursor = { id: a.id, count: 1, d: a.d || 0 }; player.armor[i] = null; } else return; }
+        else if (BL[c.id].armor && BL[c.id].armor.slot === i) { player.armor[i] = { id: c.id, d: c.d || 0 }; cursor = a ? { id: a.id, count: 1, d: a.d || 0 } : null; }
+        else return;
+        mobSound('click'); refreshInventory(); refreshHotbar(); drawArmor(true);
+      }
+      // put the held (cursor) stack back in the inventory, keeping tool wear
+      function returnCursor() {
+        if (!cursor) return;
+        if (cursor.d || maxStack(cursor.id) === 1) {
+          var free = inv.indexOf(null);
+          if (free >= 0 && free < 36) inv[free] = cursor; else dropItem(cursor.id, player.x, player.y + 1, player.z);
+        } else if (addItem(cursor.id, cursor.count)) dropItem(cursor.id, player.x, player.y + 1, player.z);
+        cursor = null;
+      }
+
+      /* ---------------- furnace: smelts ores, cooks food ---------------- */
+      var SMELT = {}, FUEL = {}, SMELT_TIME = 5, curFurn = null, furnSig = '', furnFlame = null, furnArrow = null;
+      SMELT[B.IRON] = B.IRON_INGOT; SMELT[B.GOLD] = B.GOLD_INGOT; SMELT[B.COPPER_ORE] = B.COPPER_INGOT;
+      SMELT[B.SAND] = B.GLASS; SMELT[B.COBBLE] = B.STONE; SMELT[B.CLAY] = B.BRICKS;
+      SMELT[B.RAW_PORK] = B.COOKED_PORK; SMELT[B.RAW_BEEF] = B.COOKED_BEEF;
+      FUEL[B.COAL_ITEM] = 40; FUEL[B.COAL] = 40; FUEL[B.LOG] = 15; FUEL[B.SLOG] = 15; FUEL[B.BIRCHLOG] = 15;
+      FUEL[B.PLANKS] = 7.5; FUEL[B.BIRCHPLANKS] = 7.5; FUEL[B.STICK] = 5; FUEL[B.CRAFT] = 15; FUEL[B.BOOKSHELF] = 10;
+      function getFurn(x, y, z) {
+        var k = fkey(x, y, z);
+        return world.furn[k] || (world.furn[k] = { a: null, f: null, o: null, burn: 0, max: 0, prog: 0 });
+      }
+      function tickFurnaces(dt) {
+        Object.keys(world.furn).forEach(function (k) {
+          var f = world.furn[k], ps = k.split(',');
+          var fx = +ps[0], fy = +ps[1], fz = +ps[2];
+          if (!getChunk(fx >> 4, fz >> 4)) return;
+          if (getBlock(fx, fy, fz) !== B.FURNACE) { delete world.furn[k]; return; }
+          var out = f.a ? SMELT[f.a.id] : 0;
+          var can = !!out && (!f.o || (f.o.id === out && f.o.count < 64));
+          if (f.burn > 0) f.burn = max(0, f.burn - dt);
+          if (can && f.burn <= 0 && f.f && FUEL[f.f.id]) {
+            f.max = f.burn = FUEL[f.f.id];
+            f.f.count--; if (f.f.count <= 0) f.f = null;
+          }
+          if (can && f.burn > 0) {
+            f.prog += dt;
+            if (f.prog >= SMELT_TIME) {
+              f.prog = 0;
+              f.a.count--; if (f.a.count <= 0) f.a = null;
+              if (f.o) f.o.count++; else f.o = { id: out, count: 1 };
+            }
+          } else if (!can && f.prog > 0) f.prog = max(0, f.prog - dt * 2);
+        });
+      }
+      function openFurnace(x, y, z) {
+        cursor = null; curFurn = getFurn(x, y, z); furnSig = '';
+        unlockPointer(); setState('furnace');
+      }
+      function closeFurnace() {
+        returnCursor();
+        updateCursor(); refreshHotbar();
+        curFurn = null;
+        setState('playing'); lockPointer();
+      }
+      function furnClick(part) {
+        var f = curFurn, s = f[part], c = cursor;
+        if (part === 'o') {
+          if (!c) { if (s) { cursor = s; f.o = null; } }
+          else if (s && s.id === c.id && c.count + s.count <= 64) { c.count += s.count; f.o = null; }
+          else return;
+        } else if (!c) { if (s) { cursor = s; f[part] = null; } }
+        else if (!s) { f[part] = c; cursor = null; }
+        else if (s.id === c.id && maxStack(s.id) > 1 && !s.d && !c.d) { var add = min(64 - s.count, c.count); s.count += add; c.count -= add; if (c.count <= 0) cursor = null; }
+        else { f[part] = c; cursor = s; }
+        mobSound('click'); refreshFurnace(true);
+      }
+      function furnSlot(part) {
+        var sl = makeSlot(curFurn[part], true);
+        sl.addEventListener('click', function () { furnClick(part); });
+        return sl;
+      }
+      function refreshFurnace(force) {
+        if (!curFurn) return;
+        furnSig = JSON.stringify([curFurn.a, curFurn.f, curFurn.o]);
+        var row = $('mc-furnrow'), grid = $('mc-furngrid');
+        row.innerHTML = '';
+        var col = document.createElement('div'); col.className = 'col';
+        col.appendChild(furnSlot('a'));
+        furnFlame = document.createElement('div'); furnFlame.className = 'mc-flame'; furnFlame.appendChild(document.createElement('i'));
+        col.appendChild(furnFlame);
+        col.appendChild(furnSlot('f'));
+        row.appendChild(col);
+        furnArrow = document.createElement('div'); furnArrow.className = 'mc-arrow'; furnArrow.appendChild(document.createElement('i'));
+        row.appendChild(furnArrow);
+        row.appendChild(furnSlot('o'));
+        grid.innerHTML = '';
+        var order = [], i;
+        for (i = 9; i < 36; i++) order.push(i);
+        for (i = 0; i < 9; i++) order.push(i);
+        order.forEach(function (idx) {
+          var sl = makeSlot(inv[idx], true);
+          if (idx < 9) sl.classList.add('hot');
+          if (inv[idx]) sl.title = BL[inv[idx].id].name;
+          sl.addEventListener('click', function () { slotClick(idx); });
+          grid.appendChild(sl);
+        });
+        furnaceBars();
+        updateCursor();
+      }
+      // moves the flame / arrow every frame; rebuilds the slots only when their contents changed
+      function furnaceBars() {
+        if (!curFurn) return;
+        if (JSON.stringify([curFurn.a, curFurn.f, curFurn.o]) !== furnSig) { refreshFurnace(true); return; }
+        if (furnFlame) furnFlame.firstChild.style.height = (curFurn.max ? Math.round(curFurn.burn / curFurn.max * 100) : 0) + '%';
+        if (furnArrow) furnArrow.firstChild.style.width = Math.round(curFurn.prog / SMELT_TIME * 100) + '%';
       }
       function playerOverlaps(x, y, z) {
         var p = player;
         return p.x + p.w > x && p.x - p.w < x + 1 && p.y + p.h > y && p.y < y + 1 && p.z + p.w > z && p.z - p.w < z + 1;
       }
-      function placeBlock() {
-        if (!target) return false;
+      function swapBucket(newId) {
         var s = inv[sel];
+        if (player.mode === 'creative') { if (BL[s.id].bucket === 'empty') inv[sel] = { id: newId, count: s.count }; }
+        else if (s.count <= 1) inv[sel] = { id: newId, count: 1 };
+        else { s.count--; if (addItem(newId, 1)) dropItem(newId, player.x, player.y + 1, player.z); }
+        refreshHotbar();
+      }
+      function useBucket(s) {
+        var e = eyePos(), d = lookDir(), reach = player.mode === 'creative' ? 5.5 : 4.5;
+        if (BL[s.id].bucket === 'empty') {
+          // march along the view ray (liquids are invisible to raycast) to the first water block
+          for (var t = 0; t <= reach; t += 0.05) {
+            var bx = floor(e[0] + d[0] * t), by = floor(e[1] + d[1] * t), bz = floor(e[2] + d[2] * t), id = getBlock(bx, by, bz);
+            if (id === B.WATER && wlevel(bx, by, bz) === 0) { // only source blocks can be scooped
+              setBlock(bx, by, bz, 0);
+              wakeWater(bx, by, bz);
+              addRipple(bx + 0.5, bz + 0.5, 0.8);
+              mobSound('splash'); swapBucket(B.WATER_BUCKET);
+              return true;
+            }
+            if (id && SOLID[id]) break;
+          }
+          return false;
+        }
+        if (!target) return false;
+        var x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
+        var cur = getBlock(x, y, z);
+        if (y < 0 || y >= WH || (cur !== 0 && !BL[cur].replace) || cur === B.WATER) return false;
+        setBlock(x, y, z, B.WATER);
+        delete world.flow[fkey(x, y, z)];
+        wakeWater(x, y, z);
+        addRipple(x + 0.5, z + 0.5, 1);
+        mobSound('splash'); swapBucket(B.BUCKET);
+        return true;
+      }
+      function placeBlock() {
+        var s = inv[sel];
+        if (s && BL[s.id].bucket) return useBucket(s);
+        if (s && BL[s.id].armor) return equipArmor(sel);
+        if (!target) return false;
         if (!s) return false;
         var x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
         var cur = getBlock(x, y, z), cd = BL[cur];
@@ -7030,6 +7640,8 @@
         if (nd.solid && playerOverlaps(x, y, z)) return false;
         if (y < 0 || y >= WH) return false;
         setBlock(x, y, z, s.id);
+        delete world.flow[fkey(x, y, z)];
+        wakeWater(x, y, z);
         blockSound(nd.snd, 'place');
         takeSelected();
         if (!inv[sel] || player.mode === 'survival') { refreshHotbar(); }
@@ -7052,7 +7664,8 @@
           mouse.leftEdge = false;
           if (mobFirst) {
             var m = mobTarget.mob, dx = m.x - p.x, dz = m.z - p.z, dl = sqrt(dx * dx + dz * dz) || 1;
-            damageMob(m, p.mode === 'creative' ? 20 : 2, dx / dl, dz / dl);
+            damageMob(m, p.mode === 'creative' ? 20 : attackDmg(), dx / dl, dz / dl);
+            if (p.mode === 'survival' && heldTool()) wearHeld(heldTool().type === 'sword' ? 1 : 2);
             swinging = true; swing = 0.001;
             breakProg = 0;
           } else {
@@ -7068,7 +7681,8 @@
             if (key !== breakKey) { breakKey = key; breakProg = 0; }
             var hard = BL[target.id].hard;
             if (hard >= 0) {
-              breakProg += dt / max(0.05, hard * 1.5);
+              var tl = heldTool(), mult = (tl && tl.type === blockToolType(BL[target.id])) ? tl.spd : 1;
+              breakProg += dt / max(0.05, hard * 1.5 * (canHarvest(BL[target.id]) ? 1 : 3.3) / mult);
               if (!swinging) { swinging = true; swing = 0.001; }
               breakSnd -= dt;
               if (breakSnd <= 0) { breakSnd = 0.25; blockSound(BL[target.id].snd, 'step'); spawnBlockParticles(target.x, target.y, target.z, target.id, 2); }
@@ -7095,7 +7709,8 @@
 
         if (!eating && (mouse.rightEdge || (mouse.right && placeCd <= 0))) {
           mouse.rightEdge = false;
-          if (placeBlock()) { placeCd = 0.22; swinging = true; if (swing === 0) swing = 0.001; }
+          if (target && target.id === B.FURNACE && !p.sneak && !mobFirst) openFurnace(target.x, target.y, target.z);
+          else if (placeBlock()) { placeCd = 0.22; swinging = true; if (swing === 0) swing = 0.001; }
           else placeCd = 0.1;
         }
         if (mouse.middleEdge) {
@@ -7116,10 +7731,12 @@
         show(el.loading, s === 'loading');
         show(el.pause, s === 'paused');
         show(el.inv, s === 'inventory');
+        show($('mc-furn'), s === 'furnace');
         show(el.dead, s === 'dead');
-        el.hud.style.display = (s === 'playing' || s === 'paused' || s === 'inventory' || s === 'dead') ? 'block' : 'none';
+        el.hud.style.display = (s === 'playing' || s === 'paused' || s === 'inventory' || s === 'furnace' || s === 'dead') ? 'block' : 'none';
         el.cross.style.display = s === 'playing' ? 'block' : 'none';
         if (s === 'inventory') refreshInventory();
+        if (s === 'furnace') refreshFurnace(true);
         if (s === 'title') { var anySave = hasSave(); el.contBtn.disabled = !anySave; el.worldsBtn.disabled = !anySave; }
         if (s === 'paused') syncPause();
         if (s !== 'playing') { mouse.left = mouse.right = false; clearKeys(); }
@@ -7147,7 +7764,7 @@
       function resumeGame() { setState('playing'); lockPointer(); }
       function openInventory() { cursor = null; unlockPointer(); setState('inventory'); }
       function closeInventory() {
-        if (cursor) { if (addItem(cursor.id, cursor.count)) dropItem(cursor.id, player.x, player.y + 1, player.z); cursor = null; }
+        returnCursor();
         updateCursor();
         refreshHotbar();
         setState('playing');
@@ -7165,9 +7782,12 @@
         if (state === 'playing' || state === 'title') gameTime += dt * timeSpeed;
         skyInfo();
         var p = player;
+        if (state === 'furnace') { tickFurnaces(dt); furnaceBars(); }
         if (state === 'playing') {
           updatePlayer(dt);
           updateInteraction(dt);
+          tickWater(dt);
+          tickFurnaces(dt);
           var i;
           for (i = mobs.length - 1; i >= 0; i--) {
             var m = mobs[i], dx = m.x - p.x, dz = m.z - p.z;
@@ -7188,13 +7808,13 @@
           var tf = (p.flying && p.sprint ? 1.2 : (p.sprint ? 1.12 : 1)) * fovDeg;
           fovCur += (tf - fovCur) * min(1, 9 * dt);
           focusCx = floor(p.x) >> 4; focusCz = floor(p.z) >> 4;
-          drawHearts(false); drawFood(false); drawAir();
+          drawHearts(false); drawFood(false); drawAir(); drawArmor(false);
           el.flash.style.opacity = max(0, parseFloat(el.flash.style.opacity || 0) - dt * 1.6);
           if (nameT > 0) { nameT -= dt; if (nameT < 0.6) el.itemname.style.opacity = max(0, nameT / 0.6); }
         } else if (state === 'title') {
           fovCur = 72;
         }
-        if (state === 'playing' || state === 'paused' || state === 'inventory' || state === 'dead') {
+        if (state === 'playing' || state === 'paused' || state === 'inventory' || state === 'furnace' || state === 'dead') {
           el.water.style.opacity = p.headWater ? 1 : 0;
           if (showDebug) updateDebug(); else el.debug.style.display = 'none';
         }
@@ -7388,6 +8008,8 @@
             gl.uniform3f(wprog2.u.uSkyTop, sky[0], sky[1], sky[2]);
             gl.uniform3f(wprog2.u.uHorizon, fogC[0], fogC[1], fogC[2]);
             gl.uniform1f(wprog2.u.uSunK, min(1, max(0, S.e * 3)));
+            gl.uniform1f(wprog2.u.uPhys, shaders.phys ? 1 : 0);
+            for (var ri = 0; ri < 4; ri++) gl.uniform4f(wprog2.u['uRip' + ri], ripples[ri].x, ripples[ri].z, ripples[ri].t, ripples[ri].a);
             setFog(wprog2, fogC, near, far);
           } else {
             gl.uniform1f(progWorld.u.uMode, 1);
@@ -7444,7 +8066,7 @@
         }
 
         // ----- held item / hand -----
-        if (state === 'playing' || state === 'paused' || state === 'inventory') drawHand(w / h, d);
+        if (state === 'playing' || state === 'paused' || state === 'inventory' || state === 'furnace') drawHand(w / h, d);
       }
 
       function drawChunkMesh(prog, c, me) {
@@ -7580,11 +8202,11 @@
       }
 
       /* ---------------- shader pack (only used when enabled in Shader Settings) ---------------- */
-      var shaders = { on: false, water: true, shadows: true, q: 1 };
+      var shaders = { on: false, water: true, phys: true, shadows: true, q: 1 };
       (function () {
         try {
           var sv = JSON.parse(localStorage.getItem('mc-shaders-v1') || 'null');
-          if (sv) { ['on', 'water', 'shadows'].forEach(function (k) { if (typeof sv[k] === 'boolean') shaders[k] = sv[k]; }); if (sv.q >= 0 && sv.q <= 2) shaders.q = sv.q | 0; }
+          if (sv) { ['on', 'water', 'phys', 'shadows'].forEach(function (k) { if (typeof sv[k] === 'boolean') shaders[k] = sv[k]; }); if (sv.q >= 0 && sv.q <= 2) shaders.q = sv.q | 0; }
         } catch (e) { /* ignore */ }
       })();
       function saveShaders() { try { localStorage.setItem('mc-shaders-v1', JSON.stringify(shaders)); } catch (e) { /* ignore */ } }
@@ -7752,6 +8374,8 @@
           if (c === 'Space' || c === 'Tab' || c.indexOf('Arrow') === 0 || e.ctrlKey) e.preventDefault();
         } else if (state === 'inventory') {
           if (c === 'KeyE' || c === 'Escape') { closeInventory(); e.preventDefault(); }
+        } else if (state === 'furnace') {
+          if (c === 'KeyE' || c === 'Escape') { closeFurnace(); e.preventDefault(); }
         } else if (state === 'paused') {
           if (c === 'Escape') { resumeGame(); e.preventDefault(); }
         }
@@ -7761,7 +8385,7 @@
 
       document.addEventListener('mousemove', function (e) {
         mouseX = e.clientX; mouseY = e.clientY;
-        if (state === 'inventory' && cursor) updateCursor();
+        if ((state === 'inventory' || state === 'furnace') && cursor) updateCursor();
         if (state === 'playing' && document.pointerLockElement === canvas) {
           player.yaw -= e.movementX * 0.0022 * sens;
           player.pitch -= e.movementY * 0.0022 * sens;
@@ -7816,6 +8440,7 @@
       $('mc-sh-back').addEventListener('click', function () { mobSound('click'); closeShaders(); });
       $('mc-sh-master').addEventListener('click', function () { if (fxOK) { shaders.on = !shaders.on; saveShaders(); } syncShaders(); });
       $('mc-sh-water').addEventListener('click', function () { shaders.water = !shaders.water; saveShaders(); syncShaders(); });
+      $('mc-sh-phys').addEventListener('click', function () { shaders.phys = !shaders.phys; saveShaders(); syncShaders(); });
       $('mc-sh-shadow').addEventListener('click', function () { shaders.shadows = !shaders.shadows; saveShaders(); syncShaders(); });
       $('mc-sh-quality').addEventListener('click', function () { shaders.q = (shaders.q + 1) % 3; saveShaders(); syncShaders(); });
       $('mc-resume').addEventListener('click', function () { resumeGame(); });
