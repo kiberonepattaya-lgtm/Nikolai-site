@@ -1528,7 +1528,7 @@
     <div class="intro">
       <h1>Nikolai's Site</h1>
       <p>In my free time, I like playing the piano.</p>
-      <button class="hmm-btn" onclick="document.getElementById('message').textContent = 'Hello, Nikolai! You just built your 26th website.'">Hmm...</button>
+      <button class="hmm-btn" onclick="document.getElementById('message').textContent = 'Hello, Nikolai! You just built your 26th website.'; if (window.startHack) window.startHack();">Hmm...</button>
       <div id="message"></div>
     </div>
 
@@ -3417,7 +3417,7 @@
 <script>
     /* =====================================================================
        FAKE HACK EFFECT - only an animation, nothing is touched or sent.
-       Runs once per visit a few seconds after load. window.startHack() replays it.
+       Plays when the "Hmm..." button is clicked (window.startHack()).
        ===================================================================== */
     (function () {
       var ov = document.getElementById('hk-overlay');
@@ -3506,9 +3506,6 @@
       document.addEventListener('keydown', function (e) { if (running && e.key === 'Escape') stop(); });
       window.addEventListener('resize', function () { if (running) size(); });
       window.startHack = start;
-      var seen = false;
-      try { seen = sessionStorage.getItem('hk-seen') === '1'; sessionStorage.setItem('hk-seen', '1'); } catch (e) { /* ignore */ }
-      if (!seen) later(start, 3500);
     })();
 </script>
 <script>
