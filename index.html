@@ -431,19 +431,6 @@
     cursor: pointer;
   }
   .name-btn:hover { transform: scale(1.1); }
-  .secret-mc-btn {
-    display: inline-block;
-    width: 1.6em;
-    height: 1.2em;
-    margin-left: 0.3em;
-    padding: 0;
-    vertical-align: middle;
-    background: transparent;
-    border: none;
-    outline: none;
-    opacity: 0;
-    cursor: default;
-  }
 
   /* ---------- Theme picker ---------- */
   .theme-picker {
@@ -576,21 +563,27 @@
   @media (min-width: 461px) {
     html.mobile-mode body { box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.55), 0 0 60px rgba(0, 0, 0, 0.5); border-radius: 28px; }
   }
-  html.mobile-mode .site-header { flex-direction: column; border-radius: 28px; padding: 0.8rem 1.2rem; gap: 0.5rem; text-align: center; }
+  html.mobile-mode .site-header { top: 8px; margin-top: 8px; flex-direction: column; border-radius: 22px; border-width: 2px; padding: 0.4rem 0.8rem; gap: 0.2rem; text-align: center; }
   html.mobile-mode .site-brand { align-items: center; }
-  html.mobile-mode .site-nav { justify-content: center; width: 100%; }
-  html.mobile-mode .site-nav a { padding: 0.6rem 1rem; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; }
-  html.mobile-mode main { padding: 2.5rem 0.9rem 3rem; }
+  html.mobile-mode .site-name { font-size: 1.25rem; }
+  html.mobile-mode .site-motto { font-size: 0.68rem; }
+  html.mobile-mode .site-nav { justify-content: center; width: 100%; gap: 0.35rem; }
+  html.mobile-mode .site-nav a { padding: 0.3rem 0.8rem; min-height: 34px; box-sizing: border-box; display: inline-flex; align-items: center; font-size: 0.9rem; border-width: 2px; }
+  html.mobile-mode main { padding: 2rem 1rem 7rem; }
   html.mobile-mode h1 { font-size: 2.6rem; -webkit-text-stroke-width: 5px; text-align: center; }
-  html.mobile-mode p { font-size: 1.05rem; }
-  html.mobile-mode section { margin-top: 2rem; padding: 1.6rem 1.1rem 1.3rem; border-radius: 22px; }
+  html.mobile-mode p { font-size: 1.05rem; line-height: 1.7; }
+  html.mobile-mode section { margin-top: 2.2rem; padding: 1.6rem 1.3rem 1.4rem; border-radius: 22px; }
   html.mobile-mode section:hover { transform: none; }
   html.mobile-mode .hmm-btn { min-height: 48px; padding: 0.7rem 2rem; font-size: 1.2rem; }
   html.mobile-mode .site-footer { border-radius: 22px; }
   html.mobile-mode .theme-picker { right: max(0.8rem, calc(50vw - 215px + 0.8rem)); bottom: 0.8rem; }
   html.mobile-mode .theme-menu { grid-template-columns: 1fr; width: min(260px, calc(100vw - 1.6rem)); }
   html.mobile-mode .theme-btn { min-height: 44px; }
-  html.mobile-mode .cube-scene { margin-left: max(0px, calc(50vw - 215px)); margin-right: max(0px, calc(50vw - 215px)); transform: scale(0.8); }
+  /* the three secret cubes sit in a clear row at the bottom of the column, above the content */
+  html.mobile-mode .cube-scene { top: auto !important; right: auto !important; bottom: 0.9rem !important; z-index: 30; scale: 0.7; }
+  html.mobile-mode .cube-1 { left: calc(max(0px, 50vw - 215px) + 0.4rem) !important; }
+  html.mobile-mode .cube-2 { left: calc(max(0px, 50vw - 215px) + 5.4rem) !important; }
+  html.mobile-mode .cube-3 { left: calc(max(0px, 50vw - 215px) + 10.4rem) !important; }
   html.mobile-mode .game-overlay, html.mobile-mode .piano-overlay, html.mobile-mode #mc-overlay, html.mobile-mode .hk-overlay {
     left: max(0px, calc(50vw - 215px)); right: auto; width: min(430px, 100vw);
   }
@@ -744,6 +737,7 @@
   .pkey.white.down { background: var(--key-w); }
   .pkey.black.down { background: var(--key-b); }
 
+  .cube-scene { touch-action: none; }
   .cube-scene {
     position: fixed;
     width: 80px;
@@ -1396,10 +1390,11 @@
       </button>
     </div>
     <button class="theme-btn" id="theme-toggle" aria-expanded="false" aria-controls="theme-menu">Theme</button>
+    <button class="theme-btn mobile-btn" id="mc-open" onclick="openMinecraft()">Minecraft</button>
     <button class="theme-btn mobile-btn" id="mobile-toggle" aria-pressed="false">Mobile mode</button>
   </div>
 
-  <div class="cube-scene" style="top: 12%; left: 6%;">
+  <div class="cube-scene cube-1" style="top: 12%; left: 6%;">
     <div class="cube">
       <div class="face front"></div>
       <div class="face back"></div>
@@ -1409,7 +1404,7 @@
       <div class="face bottom"></div>
     </div>
   </div>
-  <div class="cube-scene" style="top: 18%; right: 7%; animation-delay: 1s;">
+  <div class="cube-scene cube-2" style="top: 18%; right: 7%; animation-delay: 1s;">
     <div class="cube">
       <div class="face front"></div>
       <div class="face back"></div>
@@ -1419,7 +1414,7 @@
       <div class="face bottom"></div>
     </div>
   </div>
-  <div class="cube-scene" style="bottom: 10%; left: 10%; animation-delay: 2s;">
+  <div class="cube-scene cube-3" style="bottom: 10%; left: 10%; animation-delay: 2s;">
     <div class="cube">
       <div class="face front"></div>
       <div class="face back"></div>
@@ -1468,7 +1463,7 @@
     </section>
   </main>
 
-  <footer class="site-footer">Made by <button class="name-btn" id="name-btn">Nikolai</button><button class="secret-mc-btn" id="secret-mc" aria-label="Secret" tabindex="-1" onclick="openMinecraft()"></button></footer>
+  <footer class="site-footer">Made by <button class="name-btn" id="name-btn">Nikolai</button></footer>
 
   <div class="game-overlay" id="game-overlay">
     <div class="game-box">
