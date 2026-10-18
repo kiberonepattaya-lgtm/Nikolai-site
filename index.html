@@ -557,6 +557,81 @@
     h1 { -webkit-text-stroke-width: 6px; }
   }
 
+  /* ---------- Final tidy: one even vertical rhythm ---------- */
+  main { padding: 4rem 1.2rem 3rem; }
+  section { margin: 2.5rem auto 0; }
+  .intro + section { margin-top: 3.5rem; }
+  .intro { padding-bottom: 0.5rem; }
+  #message { margin-top: 1.2rem; min-height: 1.6rem; }
+  section p:last-child { margin-bottom: 0; }
+  .site-footer { margin: 3rem auto 6.5rem; text-align: center; }
+  .theme-card[hidden] { display: none !important; }
+
+  /* ---------- Secret theme: Hacker (unlocked by watching the hacking cutscene to the end) ---------- */
+  html[data-theme="hacker"] {
+    --font-head: "VT323", "Courier New", monospace;
+    --font-body: "Courier New", monospace;
+    --sky: linear-gradient(180deg, #000000 0%, #001a08 60%, #003d14 100%);
+    --blob-a: rgba(51, 255, 102, 0.16);
+    --blob-b: rgba(0, 179, 65, 0.2);
+    --blob-c: rgba(157, 255, 184, 0.1);
+    --accent-1: #33ff66;
+    --accent-2: #00b341;
+    --accent-3: #9dffb8;
+    --accent-4: #eaff6b;
+    --accent-shadow: #004d1a;
+    --grad: linear-gradient(90deg, #33ff66, #00b341);
+    --heading: #c9ffd8;
+    --text: #9dffb8;
+    --card-bg: rgba(0, 12, 4, 0.9);
+    --card-border: #33ff66;
+    --card-glow: rgba(51, 255, 102, 0.35);
+    --bar-bg: rgba(0, 10, 3, 0.9);
+    --bar-border: #33ff66;
+    --title-fill: #33ff66;
+    --title-stroke: #003d14;
+    --title-shadow: #00b341;
+    --nav-text: #c9ffd8;
+    --nav-hover: linear-gradient(90deg, #00b341, #33ff66);
+    --neon: #33ff66;
+    --neon-fill: rgba(51, 255, 102, 0.14);
+    --panel-bg: linear-gradient(135deg, #000a03, #003d14);
+    --piano-bg: linear-gradient(135deg, #000a03, #003d14 60%, #00b341);
+    --key-w: linear-gradient(180deg, #d8ffe4, #33ff66);
+    --key-b: linear-gradient(180deg, #00b341, #003d14);
+    --gd-sky-a: #000a03;
+    --gd-sky-b: #003d14;
+    --pattern: repeating-linear-gradient(0deg, rgba(51, 255, 102, 0.07) 0 1px, transparent 1px 4px);
+    --pattern-size: auto;
+  }
+  html[data-theme="hacker"] .site-header,
+  html[data-theme="hacker"] .site-footer,
+  html[data-theme="hacker"] section,
+  html[data-theme="hacker"] .site-nav a,
+  html[data-theme="hacker"] .hmm-btn,
+  html[data-theme="hacker"] .theme-btn,
+  html[data-theme="hacker"] .theme-card { border-radius: 4px; }
+  html[data-theme="hacker"] h1 { -webkit-text-stroke-width: 3px; transform: none; letter-spacing: 0.04em; text-shadow: 0 0 18px #33ff66; }
+  html[data-theme="hacker"] section h2 { text-shadow: 0 0 10px #33ff66; }
+  html[data-theme="hacker"] section h2::before { content: "> "; }
+  html[data-theme="hacker"] section p { font-size: 1.2rem; }
+  html[data-theme="hacker"] .site-header, html[data-theme="hacker"] .site-footer, html[data-theme="hacker"] section { box-shadow: 0 0 22px rgba(51, 255, 102, 0.3); }
+  .theme-card[data-pick="hacker"] { --card-bg: #000b03; --heading: #33ff66; }
+  #fx.code span { top: -5%; font-family: "Courier New", monospace; color: #33ff66; text-shadow: 0 0 6px #33ff66; animation-name: codefall; }
+  @keyframes codefall {
+    0%   { transform: translateY(0); opacity: 0; }
+    10%  { opacity: 0.9; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(110vh); opacity: 0; }
+  }
+  .unlock-toast {
+    position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 9000; padding: 0.7rem 1.4rem;
+    background: #000b03; color: #33ff66; border: 2px solid #33ff66; border-radius: 4px; font-family: "Courier New", monospace;
+    font-weight: bold; box-shadow: 0 0 22px rgba(51, 255, 102, 0.5); animation: toastIn 0.4s ease-out, toastOut 0.6s ease-in 4.4s forwards;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes toastOut { to { opacity: 0; } }
+
   /* ---------- Mobile mode: the whole site in a phone-width column ---------- */
   .mobile-btn { font-size: 0.95rem; padding: 0.55rem 1.2rem; }
   .mc-left-btn { position: fixed; left: 1.2rem; bottom: 1.2rem; z-index: 90; }
@@ -574,10 +649,10 @@
   html.mobile-mode main { padding: 2rem 1rem 7rem; }
   html.mobile-mode h1 { font-size: 2.6rem; -webkit-text-stroke-width: 5px; text-align: center; }
   html.mobile-mode p { font-size: 1.05rem; line-height: 1.7; }
-  html.mobile-mode section { margin-top: 2.2rem; padding: 1.6rem 1.3rem 1.4rem; border-radius: 22px; }
+  html.mobile-mode section { margin-top: 2rem; padding: 1.6rem 1.3rem 1.4rem; border-radius: 22px; }
   html.mobile-mode section:hover { transform: none; }
   html.mobile-mode .hmm-btn { min-height: 48px; padding: 0.7rem 2rem; font-size: 1.2rem; }
-  html.mobile-mode .site-footer { border-radius: 22px; }
+  html.mobile-mode .site-footer { border-radius: 22px; margin: 2.2rem auto 9.5rem; }
   html.mobile-mode .theme-picker { right: max(0.8rem, calc(50vw - 215px + 0.8rem)); bottom: 0.8rem; }
   html.mobile-mode .theme-menu { grid-template-columns: 1fr; width: min(260px, calc(100vw - 1.6rem)); }
   html.mobile-mode .theme-btn { min-height: 44px; }
@@ -1392,6 +1467,12 @@
         <div class="tc-desc">Bright white clouds, golden light, glittering sparkles.</div>
         <div class="tc-dots"><i style="background:#ffb61e"></i><i style="background:#7ec8ff"></i><i style="background:#ffffff"></i></div>
       </button>
+      <button class="theme-card" data-pick="hacker" role="menuitem" hidden>
+        <div class="tc-preview" style="background: linear-gradient(180deg, #000000, #001a08 55%, #00b341);"><span>💻</span><span class="tc-badge">Active</span></div>
+        <div class="tc-name">Hacker</div>
+        <div class="tc-desc">Green-on-black terminal, falling code, scanlines.</div>
+        <div class="tc-dots"><i style="background:#33ff66"></i><i style="background:#00b341"></i><i style="background:#000000"></i></div>
+      </button>
     </div>
     <button class="theme-btn" id="theme-toggle" aria-expanded="false" aria-controls="theme-menu">Theme</button>
     <button class="theme-btn mobile-btn" id="mobile-toggle" aria-pressed="false">Mobile mode</button>
@@ -1438,6 +1519,7 @@
     <nav class="site-nav">
       <a href="#about">About</a>
       <a href="#hobbies">Hobbies</a>
+      <a href="#explore">Explore</a>
       <a href="#contact">Contact</a>
     </nav>
   </header>
@@ -1461,10 +1543,16 @@
       <p>I also enjoy exploring new music and practicing pieces I love.</p>
     </section>
 
+    <section id="explore">
+      <h2>Explore</h2>
+      <p>This site has more going on than it first looks. A piano, a game, an arcade and even a Minecraft world are tucked away here.</p>
+      <p>Try the buttons in the corners, click my name in the footer, and keep an eye on the floating cubes.</p>
+    </section>
+
     <section id="contact">
       <h2>Contact</h2>
-      <p>Want to get in touch? Feel free to reach out anytime.</p>
-      <p>You can email me at nikolai@gmail.com.</p>
+      <p>Want to say hi? I keep my personal details off the internet, but you can always leave a little mark here: play a game, hit a high score, or find a secret.</p>
+      <p>Thanks for visiting my site!</p>
     </section>
   </main>
 
@@ -1663,7 +1751,11 @@
       var picker = document.getElementById('theme-picker');
       var fx = document.getElementById('fx');
       var cards = menu.querySelectorAll('.theme-card');
-      var FX = { anime: 'petal', underwater: 'bubble', hell: 'ember', heaven: 'sparkle' };
+      var FX = { anime: 'petal', underwater: 'bubble', hell: 'ember', heaven: 'sparkle', hacker: 'code' };
+      var hackerOK = false;
+      try { hackerOK = localStorage.getItem('site-hacker') === '1'; } catch (e) {}
+      var hackerCard = menu.querySelector('[data-pick="hacker"]');
+      if (hackerOK && hackerCard) hackerCard.hidden = false;
 
       function buildFx(kind) {
         fx.className = kind;
@@ -1680,6 +1772,9 @@
             var es = 3 + Math.random() * 8;
             sp.style.width = sp.style.height = es + 'px';
             sp.style.animationDuration = (4 + Math.random() * 7) + 's';
+          } else if (kind === 'code') {
+            sp.textContent = Math.random() < 0.5 ? '0' : (Math.random() < 0.5 ? '1' : String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)));
+            sp.style.fontSize = (14 + Math.random() * 14) + 'px';
           } else if (kind === 'petal') {
             var sc = 0.7 + Math.random() * 0.9;
             sp.style.width = (14 * sc) + 'px';
@@ -1690,7 +1785,7 @@
       }
 
       function applyTheme(name) {
-        if (!FX[name]) name = 'anime';
+        if (!FX[name] || (name === 'hacker' && !hackerOK)) name = 'anime';
         if (name === 'anime') html.removeAttribute('data-theme');
         else html.setAttribute('data-theme', name);
         cards.forEach(function (c) { c.classList.toggle('active', c.dataset.pick === name); });
@@ -1716,6 +1811,22 @@
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') setOpen(false);
       });
+
+      // called when the hacking cutscene is watched to the end
+      window.unlockHacker = function () {
+        var first = !hackerOK;
+        hackerOK = true;
+        try { localStorage.setItem('site-hacker', '1'); } catch (e) {}
+        if (hackerCard) hackerCard.hidden = false;
+        applyTheme('hacker');
+        if (first) {
+          var t = document.createElement('div');
+          t.className = 'unlock-toast';
+          t.textContent = '\uD83D\uDD13 Secret theme unlocked: Hacker';
+          document.body.appendChild(t);
+          setTimeout(function () { t.remove(); }, 5200);
+        }
+      };
 
       var saved = 'anime';
       try { saved = localStorage.getItem('site-theme') || 'anime'; } catch (e) {}
@@ -3389,7 +3500,7 @@
           banner.innerHTML = 'JUST KIDDING :)<small>this was only a visual effect - the site is safe</small>';
           document.documentElement.classList.remove('hk-active');
         }, 11500);
-        later(stop, 14000);
+        later(function () { stop(); if (window.unlockHacker) window.unlockHacker(); }, 14000);
       }
       ov.addEventListener('click', stop);
       document.addEventListener('keydown', function (e) { if (running && e.key === 'Escape') stop(); });
