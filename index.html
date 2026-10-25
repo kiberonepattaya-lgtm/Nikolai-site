@@ -441,8 +441,10 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.8rem;
+    gap: 0.8rem;  /* the picker box is big even while its menu is hidden: let clicks fall through to the cubes behind it */
+    pointer-events: none;
   }
+  .theme-picker .theme-btn, .theme-picker .theme-menu.open { pointer-events: auto; }
   .theme-btn {
     padding: 0.7rem 1.4rem;
     font-family: var(--font-head);
@@ -1451,7 +1453,7 @@
 
   <button class="theme-btn mobile-btn mc-left-btn" id="mc-open" onclick="openMinecraft()">Minecraft</button>
 
-  <div class="cube-scene cube-1" style="top: 12%; left: 6%;">
+  <div class="cube-scene cube-1" style="top: max(22%, 150px); left: 6%;">
     <div class="cube">
       <div class="face front"></div>
       <div class="face back"></div>
