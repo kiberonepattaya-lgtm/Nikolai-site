@@ -1659,6 +1659,7 @@
       <div class="mc-big">Game Menu</div>
       <button class="mc-btn" id="mc-resume">Back to Game</button>
       <button class="mc-btn" id="mc-modebtn">Game Mode: Creative</button>
+      <button class="mc-btn" id="mc-dim">Travel to the Nether</button>
       <div class="mc-row"><button class="mc-btn" id="mc-day">Set Day</button><button class="mc-btn" id="mc-night">Set Night</button></div>
       <div class="mc-slider">Render Distance <input id="mc-rd" type="range" min="3" max="10" step="1" value="6"><b id="mc-rdv">6</b></div>
       <div class="mc-slider">FOV <input id="mc-fov" type="range" min="50" max="110" step="1" value="72"><b id="mc-fovv">72</b></div>
@@ -6299,7 +6300,7 @@
           var rr = ((lz + 8) << 5) | (lx + 8), cc = lz * CH + lx;
           for (y = 0; y < WH; y++) {
             var skl = rs[(y << 10) | rr];
-            if (world.dim === 1 && skl < 7 && !OPAQUE[rb[(y << 10) | rr]]) skl = 7;   // Nether: dim red ambient light, no sunlight
+            if (world.dim === 1 && skl < 10 && !OPAQUE[rb[(y << 10) | rr]]) skl = 10;   // Nether: dim red ambient light, no sunlight
             chunk.light[y * 256 + cc] = (skl << 4) | rk[(y << 10) | rr];
           }
         }
@@ -8027,7 +8028,11 @@
         { out: [B.BUCKET, 1], inp: [[B.IRON_INGOT, 3]] },
         { out: [B.STICK, 4], inp: [[B.PLANKS, 2]] },
         { out: [B.STICK, 4], inp: [[B.BIRCHPLANKS, 2]] },
-        { out: [B.FURNACE, 1], inp: [[B.COBBLE, 8]] }
+        { out: [B.FURNACE, 1], inp: [[B.COBBLE, 8]] },
+        { out: [B.FLINT_STEEL, 1], inp: [[B.IRON_INGOT, 1], [B.GRAVEL, 1]] },
+        { out: [B.QUARTZ_BLOCK, 1], inp: [[B.QUARTZ, 4]] },
+        { out: [B.NETHER_BRICKS, 4], inp: [[B.NETHERRACK, 4]] },
+        { out: [B.TORCH, 4], inp: [[B.BLAZE_ROD, 1]] }
       ];
       (function () {
         var mats = { wood: B.PLANKS, stone: B.COBBLE, iron: B.IRON_INGOT, gold: B.GOLD_INGOT, diamond: B.DIAMOND_GEM };
@@ -8163,7 +8168,8 @@
           var data = JSON.stringify({
             v: 2, id: curWorld.id, name: curWorld.name, seed: world.seed, mode: p.mode, time: gameTime, sel: sel, inv: inv,
             p: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch, health: p.dead ? 20 : p.health, flying: p.flying, food: p.dead ? 20 : p.food, sat: p.sat },
-            edits: world.edits, flow: world.flow, furn: world.furn, armor: player.armor
+            edits: dimBlob(0).edits, flow: dimBlob(0).flow, furn: dimBlob(0).furn, armor: player.armor,
+            dim: world.dim, nedits: dimBlob(1).edits, nfurn: dimBlob(1).furn, links: portalLinks
           });
           localStorage.setItem(WORLD_PREFIX + curWorld.id, data);
           var list = loadIndex(), entry = null;
@@ -8250,6 +8256,130 @@
       function openShaders() { syncShaders(); show(el.shaders, true); }
       function closeShaders() { show(el.shaders, false); }
 
+      /* ---------------- Nether dimension: portals & travel ---------------- */
+      var dimData = [null, null], portalLinks = [], portalT = 0, portalWait = false;
+      function dimBlob(dim) {
+        if (world.dim === dim) return { edits: world.edits, flow: world.flow, furn: world.furn };
+        return dimData[dim] || { edits: {}, flow: {}, furn: {} };
+      }
+      // swap the active world to another dimension (same seed); the old one keeps its edits in dimData
+      function useDimension(dim) {
+        var seed = world.seed;
+        dimData[world.dim] = { edits: world.edits, flow: world.flow, furn: world.furn };
+        disposeWorld();
+        newWorld(seed);
+        world.dim = dim;
+        var dd = dimData[dim];
+        if (dd) { world.edits = dd.edits || {}; world.flow = dd.flow || {}; world.furn = dd.furn || {}; }
+        mobs = []; items = []; particles = [];
+        target = null; mobTarget = null;
+      }
+      // obsidian platform + 4x5 frame (interior x..x+1, y..y+2 at z) filled with portal; fy = floor row of the frame
+      function buildPortalFrame(xc, fy, zc) {
+        var x, y, z;
+        for (x = xc - 2; x <= xc + 3; x++) for (z = zc - 2; z <= zc + 2; z++) {
+          setBlock(x, fy, z, B.OBSIDIAN);
+          for (y = fy + 1; y <= fy + 5; y++) setBlock(x, y, z, 0);
+        }
+        for (x = xc - 1; x <= xc + 2; x++) for (y = fy; y <= fy + 4; y++) {
+          var edge = x === xc - 1 || x === xc + 2 || y === fy || y === fy + 4;
+          setBlock(x, y, zc, edge ? B.OBSIDIAN : B.PORTAL);
+        }
+        return [xc, fy + 1, zc, xc + 1, fy + 3, zc];
+      }
+      // bounding box of the connected portal blocks around a cell
+      function scanPortal(sx, sy, sz) {
+        var st = [[sx, sy, sz]], seen = {}, n = 0, bb = null;
+        while (st.length && n < 300) {
+          var c = st.pop(), k = c[0] + ',' + c[1] + ',' + c[2];
+          if (seen[k] || getBlock(c[0], c[1], c[2]) !== B.PORTAL) continue;
+          seen[k] = 1; n++;
+          if (!bb) bb = [c[0], c[1], c[2], c[0], c[1], c[2]];
+          else { bb[0] = min(bb[0], c[0]); bb[1] = min(bb[1], c[1]); bb[2] = min(bb[2], c[2]); bb[3] = max(bb[3], c[0]); bb[4] = max(bb[4], c[1]); bb[5] = max(bb[5], c[2]); }
+          st.push([c[0] + 1, c[1], c[2]], [c[0] - 1, c[1], c[2]], [c[0], c[1] + 1, c[2]], [c[0], c[1] - 1, c[2]], [c[0], c[1], c[2] + 1], [c[0], c[1], c[2] - 1]);
+        }
+        return bb;
+      }
+      function bbCenter(b) { return [(b[0] + b[3] + 1) / 2, b[1], (b[2] + b[5] + 1) / 2]; }
+      function genAround(x, z) { for (var dx = -2; dx <= 2; dx++) for (var dz = -2; dz <= 2; dz++) genNow((x >> 4) + dx, (z >> 4) + dz); }
+      function travel(src) {
+        var toNether = world.dim === 0, from = toNether ? 'o' : 'n', to = toNether ? 'n' : 'o', sc = bbCenter(src), link = null, i;
+        for (i = 0; i < portalLinks.length; i++) {
+          var L = portalLinks[i][from], lc = bbCenter(L);
+          if (abs(lc[0] - sc[0]) <= 6 && abs(lc[2] - sc[2]) <= 6 && abs(lc[1] - sc[1]) <= 10) { link = portalLinks[i]; break; }
+        }
+        useDimension(toNether ? 1 : 0);
+        var dst;
+        if (link) {
+          dst = link[to];
+          genAround(floor(dst[0]), floor(dst[2]));
+          if (getBlock(dst[0], dst[1], dst[2]) !== B.PORTAL) dst = link[to] = buildPortalFrame(dst[0], dst[1] - 1, dst[2]);
+        } else {
+          var tx = toNether ? floor(sc[0] / 8) : floor(sc[0] * 8), tz = toNether ? floor(sc[2] / 8) : floor(sc[2] * 8), fy;
+          genAround(tx, tz);
+          if (toNether) {
+            fy = 44;
+            for (var y = 60; y > 33; y--) { var bb2 = getBlock(tx, y, tz); if (SOLID[bb2] && !LIQUID[bb2]) { fy = y; break; } }
+          } else {
+            var sy = surfaceY(tx, tz);
+            fy = sy < 0 ? SEA : sy;
+          }
+          dst = buildPortalFrame(tx, fy, tz);
+          var nl = {}; nl[from] = src; nl[to] = dst;
+          portalLinks.push(nl);
+        }
+        var dc = bbCenter(dst);
+        player.x = dc[0]; player.y = dc[1]; player.z = dc[2];
+        player.vx = player.vy = player.vz = 0; player.fallDist = 0;
+        portalWait = true; portalT = 0;
+        focusCx = floor(player.x) >> 4; focusCz = floor(player.z) >> 4;
+        neededKey = '';
+        loadStart = performance.now();
+        sTone(160, 0.9, 0.2, 'sine', 520);
+        setState('loading');
+      }
+      function travelFromPlayer() {
+        var p = player, x = floor(p.x), y = floor(p.y), z = floor(p.z);
+        var src = scanPortal(x, floor(p.y + 0.1), z) || scanPortal(x, floor(p.y + 1), z) || [x, y, z, x, y + 2, z];
+        travel(src);
+      }
+      function updatePortal(dt) {
+        var p = player, x = floor(p.x), z = floor(p.z);
+        var inP = getBlock(x, floor(p.y + 0.1), z) === B.PORTAL || getBlock(x, floor(p.y + 1), z) === B.PORTAL;
+        if (!inP) { portalWait = false; portalT = 0; return; }
+        if (portalWait) return;
+        if (portalT === 0) sTone(220, 0.5, 0.12, 'sine', 330);
+        portalT += dt;
+        if (portalT > (p.mode === 'creative' ? 0.4 : 2.5)) { portalT = 0; travelFromPlayer(); }
+      }
+      // Flint and Steel on obsidian: find the empty rectangle framed by obsidian and fill it with portal
+      function lightPortal(t) {
+        var sx = t.x + t.nx, sy = t.y + t.ny, sz = t.z + t.nz;
+        for (var plane = 0; plane < 2; plane++) {   // 0: frame stands in a z-plane (x/y), 1: in an x-plane (z/y)
+          var st = [[sx, sy, sz]], seen = {}, cells = [], ok = true;
+          while (st.length && ok) {
+            var c = st.pop(), k = c[0] + ',' + c[1] + ',' + c[2];
+            if (seen[k]) continue;
+            var id = getBlock(c[0], c[1], c[2]);
+            if (id === B.OBSIDIAN) continue;
+            if (id !== 0 && id !== B.PORTAL) { ok = false; break; }
+            seen[k] = 1; cells.push(c);
+            if (cells.length > 60) { ok = false; break; }
+            if (plane === 0) st.push([c[0] + 1, c[1], c[2]], [c[0] - 1, c[1], c[2]], [c[0], c[1] + 1, c[2]], [c[0], c[1] - 1, c[2]]);
+            else st.push([c[0], c[1], c[2] + 1], [c[0], c[1], c[2] - 1], [c[0], c[1] + 1, c[2]], [c[0], c[1] - 1, c[2]]);
+          }
+          if (!ok || !cells.length) continue;
+          var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, z0 = 1e9, z1 = -1e9;
+          cells.forEach(function (c2) { x0 = min(x0, c2[0]); x1 = max(x1, c2[0]); y0 = min(y0, c2[1]); y1 = max(y1, c2[1]); z0 = min(z0, c2[2]); z1 = max(z1, c2[2]); });
+          var w = plane === 0 ? x1 - x0 + 1 : z1 - z0 + 1, h = y1 - y0 + 1;
+          if (w < 2 || h < 3 || cells.length !== w * h) continue;   // must be a full rectangle at least 2 wide, 3 tall
+          cells.forEach(function (c2) { setBlock(c2[0], c2[1], c2[2], B.PORTAL); });
+          sNoise(0.5, 1400, 0.3, 'bandpass', 1, 400); sTone(180, 0.8, 0.2, 'sine', 480);
+          return true;
+        }
+        return false;
+      }
+
       /* ---------------- world lifecycle ---------------- */
       var needed = [], neededKey = '', focusCx = 0, focusCz = 0, spawn = { x: 0, y: 80, z: 0 };
       var unloadT = 0;
@@ -8292,11 +8422,14 @@
         curWorld = meta || newWorldMeta();
         mobs = []; items = []; particles = [];
         inv = new Array(36).fill(null);
+        dimData = [null, null]; portalLinks = []; portalWait = true; portalT = 0;   // wait = step out of a portal before it triggers
         if (saved) {
           newWorld(saved.seed);
           world.edits = saved.edits || {};
           world.flow = saved.flow || {};
           world.furn = saved.furn || {};
+          if (saved.nedits) dimData[1] = { edits: saved.nedits, flow: {}, furn: saved.nfurn || {} };
+          portalLinks = saved.links || [];
         } else {
           newWorld(seedStr ? seedStr : floor(Math.random() * 1e9));
         }
@@ -8312,6 +8445,7 @@
           gameTime = saved.time;
           inv = saved.inv && saved.inv.length === 36 ? saved.inv : inv;
           sel = saved.sel || 0;
+          if (saved.dim === 1) useDimension(1);
           genNow(player.x >> 4, player.z >> 4);
         } else {
           gameTime = 1000;
@@ -8694,6 +8828,7 @@
         if (s && BL[s.id].armor) return equipArmor(sel);
         if (!target) return false;
         if (!s) return false;
+        if (s.id === B.FLINT_STEEL) return getBlock(target.x, target.y, target.z) === B.OBSIDIAN && lightPortal(target);
         var x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
         var cur = getBlock(x, y, z), cd = BL[cur];
         if (cur !== 0 && !cd.replace) return false;
@@ -8812,6 +8947,9 @@
       function syncPause() {
         $('mc-modebtn').textContent = 'Game Mode: ' + (player.mode === 'creative' ? 'Creative' : 'Survival');
         $('mc-music').textContent = 'Music: ' + (musicOn ? 'ON' : 'OFF');
+        var dimBtn = $('mc-dim');
+        dimBtn.style.display = player.mode === 'creative' ? '' : 'none';
+        dimBtn.textContent = world && world.dim === 1 ? 'Travel to the Overworld' : 'Travel to the Nether';
         $('mc-rd').value = renderDist; $('mc-rdv').textContent = renderDist;
         $('mc-fov').value = fovDeg; $('mc-fovv').textContent = fovDeg;
         $('mc-sens').value = sens * 10; $('mc-sensv').textContent = sens.toFixed(1);
@@ -8847,6 +8985,8 @@
         if (state === 'furnace') { tickFurnaces(dt); furnaceBars(); }
         if (state === 'playing') {
           updatePlayer(dt);
+          updatePortal(dt);
+          if (state !== 'playing') return;
           updateInteraction(dt);
           tickWater(dt);
           tickFurnaces(dt);
@@ -9522,7 +9662,22 @@
       $('mc-sens').addEventListener('input', function () { sens = this.value / 10; $('mc-sensv').textContent = sens.toFixed(1); });
       $('mc-savequit').addEventListener('click', function () { saveGame(); openMC(); });
       $('mc-exit').addEventListener('click', closeMC);
-      $('mc-respawn').addEventListener('click', function () { resetPlayer(); setState('playing'); lockPointer(); drawHearts(true); });
+      $('mc-respawn').addEventListener('click', function () {
+        if (world && world.dim === 1) {   // died in the Nether: wake up at the world spawn in the Overworld
+          useDimension(0);
+          resetPlayer();
+          focusCx = floor(player.x) >> 4; focusCz = floor(player.z) >> 4;
+          neededKey = ''; loadStart = performance.now();
+          setState('loading'); drawHearts(true);
+          return;
+        }
+        resetPlayer(); setState('playing'); lockPointer(); drawHearts(true);
+      });
+      $('mc-dim').addEventListener('click', function () {   // creative shortcut: hop to the other dimension
+        mobSound('click');
+        var p = player, x = floor(p.x), z = floor(p.z);
+        travel([x, floor(p.y), z, x, floor(p.y) + 2, z]);
+      });
       overlay.addEventListener('dragstart', function (e) { e.preventDefault(); });
       refreshHotbar();
       drawHearts(true);
