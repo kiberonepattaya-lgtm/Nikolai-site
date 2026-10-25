@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="party">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Nikolai's Site</title>
@@ -9084,47 +9084,5 @@
 
 </script>
 <!-- MC-JS-END -->
-<!-- PARTY-BEGIN -->
-<style>
-  html.party { background: linear-gradient(120deg, #ff5fa2, #ffb347, #fff35c, #5cf0a4, #4cc9ff, #b46bff, #ff5fa2) !important; background-size: 300% 300% !important; background-attachment: fixed !important; animation: partyBg 10s linear infinite; }
-  @keyframes partyBg { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-  html.party body::before, html.party body::after { opacity: 0.25; }
-  #party-emoji { position: fixed; inset: 0; z-index: 40; overflow: hidden; pointer-events: none; }
-  #party-emoji span { position: absolute; top: -10%; font-size: 1.8rem; opacity: 0; animation: partyFall linear infinite; }
-  @keyframes partyFall {
-    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { transform: translateY(115vh) rotate(540deg); opacity: 0; }
-  }
-  #party-greeting {
-    position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 9000; max-width: min(90vw, 560px);
-    padding: 0.8rem 1.6rem; border-radius: 999px; background: #fff; color: #c2185b; font: 700 1.2rem/1.3 system-ui, sans-serif;
-    text-align: center; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); cursor: pointer; animation: partyPop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1);
-  }
-  @keyframes partyPop { from { transform: translateX(-50%) scale(0.2); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { #party-emoji { display: none; } html.party { animation: none; } }
-</style>
-<div id="party-emoji" aria-hidden="true"></div>
-<div id="party-greeting" role="status" title="Click to dismiss">🪩 Confetti incoming, Nikolai! Time to dance! 🎈</div>
-<script>
-(function () {
-  var box = document.getElementById('party-emoji'), E = ['🎉', '🥳', '🎈', '🎊', '✨', '🪩', '🍰', '🎁', '🌈', '🎶'];
-  for (var i = 0; i < 28; i++) {
-    var s = document.createElement('span');
-    s.textContent = E[i % E.length];
-    s.style.left = (Math.random() * 96) + '%';
-    s.style.fontSize = (1.2 + Math.random() * 1.6) + 'rem';
-    s.style.animationDuration = (7 + Math.random() * 8) + 's';
-    s.style.animationDelay = (-Math.random() * 12) + 's';
-    box.appendChild(s);
-  }
-  var g = document.getElementById('party-greeting');
-  function hide() { g.style.display = 'none'; }
-  g.addEventListener('click', hide);
-  setTimeout(hide, 9000);
-})();
-</script>
-<!-- PARTY-END -->
 </body>
 </html>
