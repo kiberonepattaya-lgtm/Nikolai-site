@@ -1406,6 +1406,10 @@
   .mc-slider { width: 340px; max-width: 88vw; box-sizing: border-box; display: flex; align-items: center; gap: 10px; font-size: 24px; text-shadow: 2px 2px #3f3f3f; }
   .mc-slider input { flex: 1; accent-color: #7d88c4; }
   .mc-slider b { min-width: 30px; text-align: right; color: #ffff55; font-weight: normal; }
+  #mc-boss { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: min(420px, 70vw); text-align: center; font-size: 18px; text-shadow: 2px 2px #3f3f3f; display: none; }
+  #mc-boss span { display: block; margin-bottom: 4px; }
+  #mc-boss div { height: 10px; background: #000; border: 2px solid #777; }
+  #mc-boss i { display: block; height: 100%; width: 100%; background: #b13bff; }
   .mc-bar { width: 340px; max-width: 80vw; height: 14px; background: #000; border: 2px solid #777; }
   .mc-bar i { display: block; height: 100%; width: 0; background: #62d62b; }
   .mc-big { font-size: 34px; text-shadow: 2px 2px #3f3f3f; margin-bottom: 10px; }
@@ -1634,6 +1638,7 @@
       <canvas id="mc-food" width="204" height="20"></canvas>
       <canvas id="mc-air" width="204" height="22"></canvas>
       <div id="mc-itemname"></div>
+      <div id="mc-boss"><span>Ender Dragon</span><div><i id="mc-bossbar"></i></div></div>
       <div id="mc-hotbar"></div>
       <div id="mc-hint">Click to play!</div>
       <div id="mc-cursoritem"></div>
@@ -1665,6 +1670,8 @@
       <button class="mc-btn" id="mc-resume">Back to Game</button>
       <button class="mc-btn" id="mc-modebtn">Game Mode: Creative</button>
       <button class="mc-btn" id="mc-dim">Travel to the Nether</button>
+      <button class="mc-btn" id="mc-end">Travel to the End</button>
+      <div class="mc-label" id="mc-shint"></div>
       <div class="mc-row"><button class="mc-btn" id="mc-day">Set Day</button><button class="mc-btn" id="mc-night">Set Night</button></div>
       <div class="mc-slider">Render Distance <input id="mc-rd" type="range" min="3" max="10" step="1" value="6"><b id="mc-rdv">6</b></div>
       <div class="mc-slider">FOV <input id="mc-fov" type="range" min="50" max="110" step="1" value="72"><b id="mc-fovv">72</b></div>
@@ -5812,6 +5819,40 @@
       def('QUARTZ', 'Nether Quartz', { all: 'quartz_item', item: 1 });
       def('FLINT_STEEL', 'Flint and Steel', { all: 'flint_steel', item: 1 });
       def('BLAZE_ROD', 'Blaze Rod', { all: 'blaze_rod', item: 1 });
+      // ---- The End ----
+      GEN.end_stone = function (d, rnd) {
+        fillNoise(d, rnd, 222, 224, 166, 10);
+        speckle(d, rnd, 16, 196, 198, 140, 2, 1);
+        speckle(d, rnd, 10, 238, 238, 190, 1, 1);
+      };
+      GEN.end_frame_side = function (d, rnd) {
+        fillNoise(d, rnd, 92, 118, 94, 8);
+        for (var i = 0; i < 16; i++) { setpx(d, i, 0, 44, 62, 48); setpx(d, i, 15, 44, 62, 48); setpx(d, 0, i, 56, 78, 60); setpx(d, 15, i, 56, 78, 60); }
+        for (var x = 4; x < 12; x++) setpx(d, x, 3, 176, 214, 178);
+      };
+      GEN.end_frame_top = function (d, rnd) {
+        fillNoise(d, rnd, 92, 118, 94, 8);
+        for (var i = 0; i < 16; i++) { setpx(d, i, 0, 44, 62, 48); setpx(d, i, 15, 44, 62, 48); setpx(d, 0, i, 56, 78, 60); setpx(d, 15, i, 56, 78, 60); }
+        for (var y = 5; y < 11; y++) for (var x = 4; x < 12; x++) {   // the Eye of Ender, set in the frame
+          var edge = x === 4 || x === 11 || y === 5 || y === 10;
+          setpx(d, x, y, edge ? 20 : 30, edge ? 100 : 190, edge ? 80 : 120);
+        }
+        setpx(d, 7, 7, 230, 255, 230); setpx(d, 8, 7, 200, 255, 220); setpx(d, 7, 8, 120, 40, 160); setpx(d, 8, 8, 120, 40, 160);
+      };
+      GEN.end_portal = function (d, rnd) {
+        fillNoise(d, rnd, 8, 20, 26, 6);
+        for (var k = 0; k < 26; k++) { var g = 120 + rnd() * 135; setpx(d, floor(rnd() * 16), floor(rnd() * 16), g * 0.5, g, g * 0.9); }
+        for (var j = 0; j < 8; j++) setpx(d, floor(rnd() * 16), floor(rnd() * 16), 150, 70, 220);
+      };
+      GEN.ender_pearl = function (d, rnd) {
+        itemClear(d);
+        disc(d, 7.5, 8, 5.5, 22, 120, 104, rnd);
+        pxc(d, 5, 5, [120, 230, 200]); pxc(d, 6, 5, [90, 200, 170]); pxc(d, 5, 6, [90, 200, 170]);
+      };
+      def('END_STONE', 'End Stone', { all: 'end_stone', opaque: 1, solid: 1, hard: 3 });
+      def('END_FRAME', 'End Portal Frame', { top: 'end_frame_top', bottom: 'end_stone', side: 'end_frame_side', box: [0, 0, 0, 16, 13, 16], solid: 1, hard: -1 });
+      def('END_PORTAL', 'End Portal', { all: 'end_portal', box: [0, 0, 0, 16, 12, 16], light: 12, hard: -1, snd: 'glass', creative: false, replace: true });
+      def('ENDER_PEARL', 'Ender Pearl', { all: 'ender_pearl', item: 1 });
       for (var di = 0; di < 10; di++) tile('destroy_' + di);
       var NB = BL.length;
       BL.forEach(function (b) {
@@ -5883,7 +5924,8 @@
         var s = typeof seed === 'number' ? seed : hashStr(String(seed));
         world = {
           seed: s | 0,
-          dim: 0,                       // 0 = Overworld, 1 = Nether
+          dim: 0,                       // 0 = Overworld, 1 = Nether, 2 = The End
+          sh: null,                     // stronghold chunk (Overworld), found lazily
           chunks: new Map(),
           edits: {},
           flow: {}, wq: [], wqs: {}, furn: {},
@@ -5914,6 +5956,87 @@
         else if (temp < -0.2) b = BIO.TUNDRA;
         else b = hum > 0.0 ? BIO.FOREST : BIO.PLAINS;
         ciH = hi; ciB = b; ciTemp = temp;
+      }
+
+      /* ---------------- Stronghold (Overworld) with a finished End portal ---------------- */
+      function getStronghold() {
+        if (world.sh) return world.sh;
+        var found = null;
+        for (var k = 0; k < 60 && !found; k++) {
+          var an = hash2(k, 7, world.seed + 900) * 6.283, r = 9 + hash2(k, 8, world.seed + 901) * 6;   // 9-15 chunks from the origin
+          var scx = Math.round(Math.cos(an) * r), scz = Math.round(Math.sin(an) * r);
+          columnInfo(scx * 16 + 8, scz * 16 + 8);
+          if (ciB !== BIO.OCEAN && ciB !== BIO.BEACH && ciH > SEA + 2) found = { cx: scx, cz: scz };
+        }
+        world.sh = found || { cx: 10, cz: 0 };
+        return world.sh;
+      }
+      function buildStronghold(blocks, x0, z0) {
+        var SY = 18, L = CH, lx, lz, y, i;
+        function set(ax, ay, az, id) { if (ax < 0 || ax >= L || az < 0 || az >= L || ay < 1 || ay >= WH) return; blocks[(ay * L + az) * L + ax] = id; }
+        function brick(ax, ay, az) { set(ax, ay, az, hash2(ax + x0, az + z0 + ay, world.seed + 66) < 0.28 ? B.MOSSY : B.STONEBRICK); }
+        // the room: shell x 4..15, z 1..12, floor at SY, 6 blocks of headroom
+        for (lx = 4; lx <= 15; lx++) for (lz = 1; lz <= 12; lz++) for (y = SY - 1; y <= SY + 7; y++) {
+          var wall = lx === 4 || lx === 15 || lz === 1 || lz === 12 || y === SY - 1 || y === SY || y === SY + 7;
+          if (wall) brick(lx, y, lz); else set(lx, y, lz, 0);
+        }
+        // the End portal: 3x3 portal (x 9..11, z 5..7) inside a ring of 12 frames, each holding its Eye of Ender
+        for (lx = 9; lx <= 11; lx++) for (lz = 5; lz <= 7; lz++) {
+          set(lx, SY, lz, B.END_PORTAL);
+          for (y = SY - 3; y <= SY - 1; y++) set(lx, y, lz, 0);   // a pit under the portal to drop into
+        }
+        for (i = 0; i < 3; i++) {
+          set(9 + i, SY, 4, B.END_FRAME); set(9 + i, SY, 8, B.END_FRAME);
+          set(8, SY, 5 + i, B.END_FRAME); set(12, SY, 5 + i, B.END_FRAME);
+        }
+        set(5, SY + 1, 2, B.TORCH); set(14, SY + 1, 2, B.TORCH); set(5, SY + 1, 11, B.TORCH); set(14, SY + 1, 11, B.TORCH);
+        set(8, SY + 1, 3, B.TORCH); set(12, SY + 1, 9, B.TORCH);
+        // spiral staircase from the surface down to the room's doorway (west wall)
+        var hmax = 0;
+        for (lx = 1; lx <= 3; lx++) for (lz = 1; lz <= 3; lz++) { columnInfo(x0 + lx, z0 + lz); hmax = max(hmax, ciH); }
+        var ring = [[3, 2], [3, 3], [2, 3], [1, 3], [1, 2], [1, 1], [2, 1], [3, 1]];
+        for (i = 0; i < 8; i++) for (y = SY; y <= hmax + 6; y++) set(ring[i][0], y, ring[i][1], 0);
+        for (y = SY - 1; y <= hmax + 2; y++) brick(2, y, 2);   // central pillar
+        for (i = 0; i <= hmax - SY + 1; i++) brick(ring[i % 8][0], SY + i, ring[i % 8][1]);
+        for (y = SY + 1; y <= SY + 3; y++) set(4, y, 2, 0);    // doorway into the room
+        brick(4, SY, 2);
+      }
+
+      /* ---------------- The End: main island, 12 obsidian pillars ---------------- */
+      var END_PILLARS = (function () {
+        var hs = [0, 9, 17, 5, 23, 12, 26, 3, 19, 8, 14, 21], out = [];
+        for (var i = 0; i < 12; i++) out.push({ x: Math.round(Math.cos(i * PI / 6) * 31), z: Math.round(Math.sin(i * PI / 6) * 31), r: i % 3 === 0 ? 3 : 2.5, top: 60 + hs[i] });
+        return out;
+      })();
+      // top y of the end stone at a column, or -1 when it is void there
+      function endSurface(wx, wz) {
+        var W = world, r = sqrt(wx * wx + wz * wz), R = 34 + 3 * W.nMisc.n2(wx * 0.05 + 11, wz * 0.05 - 11);
+        if (r > R) return -1;
+        return 50 + floor(W.nMisc.n2(wx * 0.1 + 9, wz * 0.1) * 1.2 + 0.5);
+      }
+      function genEnd(cx, cz) {
+        var W = world, blocks = new Uint8Array(CH * CH * WH), x0 = cx * CH, z0 = cz * CH, lx, lz, y, i;
+        for (lz = 0; lz < CH; lz++) for (lx = 0; lx < CH; lx++) {
+          var wx = x0 + lx, wz = z0 + lz, ts = endSurface(wx, wz);
+          if (ts < 0) continue;
+          var r = sqrt(wx * wx + wz * wz), R = 34 + 3 * W.nMisc.n2(wx * 0.05 + 11, wz * 0.05 - 11), q = max(0, 1 - (r / R) * (r / R));
+          var bottom = ts - floor(16 * Math.pow(q, 0.8)) - 2;
+          for (y = max(2, bottom); y <= ts; y++) blocks[(y * CH + lz) * CH + lx] = B.END_STONE;
+          for (i = 0; i < 12; i++) {
+            var pl = END_PILLARS[i], dx = wx - pl.x, dz = wz - pl.z;
+            if (dx * dx + dz * dz > pl.r * pl.r) continue;
+            for (y = max(2, bottom); y < pl.top; y++) blocks[(y * CH + lz) * CH + lx] = B.OBSIDIAN;
+            blocks[(pl.top * CH + lz) * CH + lx] = B.BEDROCK;
+          }
+        }
+        var chunk = {
+          cx: cx, cz: cz, x0: x0, z0: z0, blocks: blocks, light: new Uint8Array(CH * CH * WH),
+          state: 1, lit: false, meshOp: null, meshWt: null, needMesh: true, version: 0
+        };
+        var ed = W.edits[ckey(cx, cz)];
+        if (ed) for (var k2 in ed) blocks[+k2] = ed[k2];
+        W.chunks.set(ckey(cx, cz), chunk);
+        return chunk;
       }
 
       /* ---------------- Nether terrain ---------------- */
@@ -6041,6 +6164,7 @@
 
       function genChunk(cx, cz) {
         if (world.dim === 1) return genNether(cx, cz);
+        if (world.dim === 2) return genEnd(cx, cz);
         var W = world, blocks = new Uint8Array(CH * CH * WH), x0 = cx * CH, z0 = cz * CH;
         var rng = mulberry32((hash2(cx, cz, W.seed) * 4294967296) | 0);
         var lx, lz, y, wx, wz;
@@ -6175,6 +6299,9 @@
           }
         }
 
+        var shc = getStronghold();
+        if (cx === shc.cx && cz === shc.cz) buildStronghold(blocks, x0, z0);
+
         var chunk = {
           cx: cx, cz: cz, x0: x0, z0: z0, blocks: blocks, light: new Uint8Array(CH * CH * WH),
           state: 1, lit: false, meshOp: null, meshWt: null, needMesh: true, version: 0
@@ -6306,6 +6433,7 @@
           for (y = 0; y < WH; y++) {
             var skl = rs[(y << 10) | rr];
             if (world.dim === 1 && skl < 10 && !OPAQUE[rb[(y << 10) | rr]]) skl = 10;   // Nether: dim red ambient light, no sunlight
+            else if (world.dim === 2) skl = OPAQUE[rb[(y << 10) | rr]] ? 0 : 9;               // The End: soft purple ambient, no sunlight
             chunk.light[y * 256 + cc] = (skl << 4) | rk[(y << 10) | rr];
           }
         }
@@ -7087,6 +7215,9 @@
         else if (kind === 'splash') sNoise(0.3, 1800, 0.45, 'bandpass', 0.8, 700);
         else if (kind === 'pop') sTone(620, 0.1, 0.18, 'sine', 1100);
         else if (kind === 'click') sTone(420, 0.05, 0.16, 'square');
+        else if (kind === 'roar') { sTone(70, 1.0, 0.4, 'sawtooth', 40); sNoise(0.7, 300, 0.25, 'lowpass', 1); }
+        else if (kind === 'teleport') { sTone(1100, 0.25, 0.22, 'sine', 180); sTone(700, 0.2, 0.12, 'triangle', 1400, 0.05); }
+        else if (kind === 'boom') { sNoise(0.7, 260, 0.6, 'lowpass', 1); sTone(80, 0.5, 0.4, 'square', 30); }
         else if (kind === 'death') { sTone(300, 0.8, 0.3, 'sawtooth', 50); }
       }
       var musicTimer = 8;
@@ -7191,9 +7322,28 @@
         for (var y = 5; y < 8; y++) { for (var x = 2; x < 6; x++) setpx(d, x, y, 255, 240, 90); for (var x2 = 10; x2 < 14; x2++) setpx(d, x2, y, 255, 240, 90); }
         for (var m = 4; m < 12; m++) setpx(d, m, 11, 30, 8, 6);
       };
+      MOBGEN.end_body = function (d, r) { fillNoise(d, r, 22, 14, 28, 5); };
+      MOBGEN.end_face = function (d, r) {
+        fillNoise(d, r, 22, 14, 28, 5);
+        for (var x = 1; x < 6; x++) for (var y = 8; y < 10; y++) { setpx(d, x, y, 230, 120, 255); setpx(d, 15 - x, y, 230, 120, 255); }
+        for (var m = 5; m < 11; m++) setpx(d, m, 12, 8, 4, 12);
+      };
+      MOBGEN.dr_body = function (d, r) { fillNoise(d, r, 36, 32, 42, 7); for (var k = 0; k < 10; k++) setpx(d, floor(r() * 16), floor(r() * 16), 70, 60, 84); };
+      MOBGEN.dr_head = function (d, r) {
+        fillNoise(d, r, 36, 32, 42, 7);
+        for (var x = 2; x < 6; x++) { setpx(d, x, 5, 230, 120, 255); setpx(d, 15 - x, 5, 230, 120, 255); setpx(d, x, 6, 190, 70, 230); setpx(d, 15 - x, 6, 190, 70, 230); }
+        for (var m = 3; m < 13; m++) setpx(d, m, 12, 10, 6, 14);
+      };
+      MOBGEN.dr_wing = function (d, r) { fillNoise(d, r, 52, 36, 66, 8); for (var i = 0; i < 16; i += 5) for (var y = 0; y < 16; y++) setpx(d, i, y, 24, 18, 30); };
+      MOBGEN.crys = function (d, r) {
+        fillNoise(d, r, 226, 90, 230, 16);
+        for (var i = 0; i < 16; i++) { setpx(d, i, 0, 255, 220, 255); setpx(d, i, 15, 140, 40, 160); setpx(d, 0, i, 255, 190, 255); setpx(d, 15, i, 140, 40, 160); }
+        for (var y = 4; y < 12; y++) for (var x = 4; x < 12; x++) setpx(d, x, y, 255, 240 - (x + y) * 2, 255);
+      };
       MOBGEN.fire_ball = function (d, r) { fillNoise(d, r, 255, 170, 30, 30); for (var i = 0; i < 20; i++) setpx(d, floor(r() * 16), floor(r() * 16), 255, 235, 140); };
       ['pig_skin', 'pig_face', 'pig_snout', 'cow_skin', 'cow_face', 'cow_leg', 'zom_head', 'zom_face', 'zom_body', 'zom_arm', 'zom_leg', 'hand',
-        'pgm_head', 'pgm_face', 'pgm_snout', 'pgm_body', 'pgm_arm', 'pgm_leg', 'blz_head', 'blz_face', 'blz_rod', 'mag_body', 'mag_face', 'fire_ball'].forEach(mt);
+        'pgm_head', 'pgm_face', 'pgm_snout', 'pgm_body', 'pgm_arm', 'pgm_leg', 'blz_head', 'blz_face', 'blz_rod', 'mag_body', 'mag_face', 'fire_ball',
+        'end_body', 'end_face', 'dr_body', 'dr_head', 'dr_wing', 'crys'].forEach(mt);
       function buildMobAtlas() {
         var cv = document.createElement('canvas');
         cv.width = cv.height = 256;
@@ -7218,7 +7368,13 @@
           loot: function () { return Math.random() < 0.6 ? [B.BLAZE_ROD] : []; } },
         magmacube: { hp: 16, w: 0.42, h: 0.8, speed: 3.0, passive: false, hop: true, dmg: 4, snd: 'pig', fireproof: true,
           loot: function () { return Math.random() < 0.6 ? [B.MAGMA] : []; } },
-        fireball: { hp: 1, w: 0.2, h: 0.4, speed: 0, passive: false, proj: true, snd: 'pop', fireproof: true }
+        fireball: { hp: 1, w: 0.2, h: 0.4, speed: 0, passive: false, proj: true, snd: 'pop', fireproof: true },
+        // The End
+        enderman: { hp: 30, w: 0.3, h: 2.9, speed: 3.4, passive: false, neutral: true, stare: true, teleport: true, dmg: 5, scale: 1.25, snd: 'zombie', fireproof: true,
+          loot: function () { return Math.random() < 0.7 ? [B.ENDER_PEARL] : []; } },
+        endcrystal: { hp: 1, w: 0.5, h: 1.2, speed: 0, passive: false, crystal: true, persist: true, snd: 'pop', fireproof: true },
+        dragon: { hp: 200, w: 1.8, h: 2.6, speed: 0, passive: false, dragon: true, persist: true, scale: 2.6, r: 7, dmg: 6, snd: 'roar', fireproof: true,
+          loot: function () { return [B.ENDER_PEARL, B.ENDER_PEARL, B.ENDER_PEARL]; } }
       };
       var MODELS = null;
       function bx(wpx, hpx, dpx, cx, cy, cz, tiles) {
@@ -7235,7 +7391,28 @@
         [[22, 6.5, 0, 2.4], [15, 6.5, 0.785, -2.0], [8, 6.5, 0.4, 2.8]].forEach(function (ring) {
           for (var k = 0; k < 4; k++) blazeRods.push({ m: bx(2, 7, 2, ring[1], 0, 0, same(BZR)), px: 0, py: ring[0], pz: 0, anim: 'spin', ph: ring[2] + k * PI / 2, sp: ring[3] });
         });
+        var EB = mt('end_body'), EF = mt('end_face'), DB = mt('dr_body'), DH = mt('dr_head'), DW = mt('dr_wing'), CR = mt('crys');
         MODELS = {
+          enderman: [
+            { m: legMesh(2, 14, EB), px: -2, py: 14, pz: 0, anim: 'l0' }, { m: legMesh(2, 14, EB), px: 2, py: 14, pz: 0, anim: 'l1' },
+            { m: bx(8, 12, 4, 0, 0, 0, same(EB)), px: 0, py: 20, pz: 0 },
+            { m: bx(8, 8, 8, 0, 0, 0, [EB, EB, EB, EB, EF, EB]), px: 0, py: 30, pz: 0, anim: 'head' },
+            { m: bx(2, 22, 2, 0, -11, 0, same(EB)), px: -5, py: 26, pz: 0, anim: 'l1' }, { m: bx(2, 22, 2, 0, -11, 0, same(EB)), px: 5, py: 26, pz: 0, anim: 'l0' }
+          ],
+          endcrystal: [
+            { m: bx(8, 8, 8, 0, 0, 0, same(CR)), px: 0, py: 13, pz: 0, anim: 'spin', ph: 0, sp: 1.6 },
+            { m: bx(6, 6, 6, 0, 0, 0, same(CR)), px: 0, py: 13, pz: 0, anim: 'spin', ph: 0.8, sp: -2.1 }
+          ],
+          beam: [{ m: bx(2, 2, 16, 0, 0, 8, same(CR)), px: 0, py: 0, pz: 0 }],
+          dragon: [
+            { m: bx(10, 8, 20, 0, 0, 0, same(DB)), px: 0, py: 8, pz: 0 },
+            { m: bx(6, 6, 6, 0, 0, 0, same(DB)), px: 0, py: 10, pz: 13 },
+            { m: bx(8, 7, 10, 0, 0, 0, [DH, DH, DH, DH, DH, DH].map(function (t, k) { return k === 4 ? DH : DB; })), px: 0, py: 11, pz: 21 },
+            { m: bx(5, 5, 8, 0, 0, 0, same(DB)), px: 0, py: 8, pz: -14 }, { m: bx(4, 4, 8, 0, 0, 0, same(DB)), px: 0, py: 7, pz: -22 },
+            { m: bx(3, 3, 8, 0, 0, 0, same(DB)), px: 0, py: 6, pz: -30 },
+            { m: bx(20, 1, 12, 10, 0, 0, same(DW)), px: 4, py: 12, pz: 2, anim: 'flapL' },
+            { m: bx(20, 1, 12, -10, 0, 0, same(DW)), px: -4, py: 12, pz: 2, anim: 'flapR' }
+          ],
           pigman: [
             { m: bx(8, 12, 4, 0, 0, 0, same(PGB)), px: 0, py: 18, pz: 0 },
             { m: bx(8, 8, 8, 0, 0, 0, [PGH, PGH, PGH, PGH, PGF, PGH]), px: 0, py: 28, pz: 0, anim: 'head' },
@@ -7635,7 +7812,8 @@
         mobs.push({
           type: type, x: x, y: y, z: z, vx: 0, vy: 0, vz: 0, w: d.w, h: d.h, yaw: Math.random() * 6.28, tyaw: 0,
           hp: d.hp, hurtT: 0, aiT: Math.random() * 3, wander: false, flee: 0, walk: Math.random() * 6, dead: false, deadT: 0,
-          onGround: false, atkCd: 0, sndT: 4 + Math.random() * 14, age: 0
+          onGround: false, atkCd: 0, sndT: 4 + Math.random() * 14, age: 0,
+          tpT: 30 + Math.random() * 30      // Endermen blink somewhere new every 30-60 seconds
         });
       }
       function surfaceY(x, z) {
@@ -7648,7 +7826,118 @@
       }
       function lightLevel(x, y, z) {
         var l = getLightRaw(x, y, z);
-        return max((l >> 4) / 15 * (world && world.dim === 1 ? 1 : skyFactor()), (l & 15) / 15);
+        return max((l >> 4) / 15 * (world && world.dim !== 0 ? 1 : skyFactor()), (l & 15) / 15);
+      }
+      /* ---- The End: dragon, crystals, Endermen ---- */
+      var endState = { dead: false, cr: [] }, endGrace = 0, DRAGON_DMG = 6;
+      function findFloor(x, z, yTop, yBot) {
+        for (var y = yTop; y > yBot; y--) {
+          var b = getBlock(x, y - 1, z);
+          if (SOLID[b] && !LIQUID[b] && getBlock(x, y, z) === 0 && getBlock(x, y + 1, z) === 0 && getBlock(x, y + 2, z) === 0) return y;
+        }
+        return -1;
+      }
+      function enderTeleport(m) {
+        for (var t = 0; t < 14; t++) {
+          var ang = Math.random() * 6.283, dist = 6 + Math.random() * 16, x = floor(m.x + Math.cos(ang) * dist), z = floor(m.z + Math.sin(ang) * dist);
+          var c = getChunk(x >> 4, z >> 4);
+          if (!c) continue;
+          var y = findFloor(x, z, min(WH - 6, floor(m.y) + 10), max(2, floor(m.y) - 14));
+          if (y < 0) continue;
+          spawnBlockParticles(floor(m.x), floor(m.y), floor(m.z), B.OBSIDIAN, 14);
+          m.x = x + 0.5; m.y = y; m.z = z + 0.5; m.vx = m.vy = m.vz = 0;
+          spawnBlockParticles(x, y, z, B.OBSIDIAN, 14);
+          if (sqrt((m.x - player.x) * (m.x - player.x) + (m.z - player.z) * (m.z - player.z)) < 24) mobSound('teleport');
+          return;
+        }
+      }
+      function updateCrystal(m, dt) {
+        var dr = null;
+        for (var i = 0; i < mobs.length; i++) if (mobs[i].type === 'dragon' && !mobs[i].dead) { dr = mobs[i]; break; }
+        m.beam = dr ? [dr.x, dr.y + 1.6, dr.z] : null;
+      }
+      function crystalExplode(m) {
+        if (m.idx !== undefined) endState.cr[m.idx] = false;
+        m.beam = null;
+        spawnBlockParticles(floor(m.x), floor(m.y), floor(m.z), B.OBSIDIAN, 26);
+        mobSound('boom');
+        var dx = player.x - m.x, dy = player.y + 0.9 - m.y, dz = player.z - m.z, d = sqrt(dx * dx + dy * dy + dz * dz);
+        if (d < 5 && player.mode === 'survival') hurtPlayer(max(1, Math.round((1 - d / 5) * 10)), dx / (d || 1) * 6, dz / (d || 1) * 6);
+      }
+      function updateDragon(m, dt) {
+        m.hurtT = max(0, m.hurtT - dt);
+        m.atkCd = max(0, m.atkCd - dt);
+        var maxHp = MOBS.dragon.hp, i, live = 0;
+        for (i = 0; i < mobs.length; i++) if (mobs[i].type === 'endcrystal' && !mobs[i].dead) live++;
+        if (live && m.hp < maxHp) m.hp = Math.min(maxHp, m.hp + live * 0.6 * dt);   // every crystal still standing heals the dragon
+        if (!m.phase) { m.phase = 'circle'; m.t = 9; m.ang = Math.atan2(m.z, m.x); }
+        m.t -= dt;
+        var tx, ty, tz, spd = 9;
+        if (m.phase === 'circle') {
+          m.ang += dt * 0.32;
+          tx = Math.cos(m.ang) * 28; tz = Math.sin(m.ang) * 28; ty = 68 + Math.sin(m.age * 0.7) * 5;
+          if (m.t <= 0 && !player.dead && endGrace <= 0) { m.phase = 'dive'; m.t = 5; mobSound('roar'); }
+        } else {
+          tx = player.x; ty = player.y + 1.2; tz = player.z; spd = 15;
+          if (m.t <= 0) { m.phase = 'circle'; m.t = 8 + Math.random() * 6; m.ang = Math.atan2(m.z, m.x); }
+        }
+        var dx = tx - m.x, dy = ty - m.y, dz = tz - m.z, dl = sqrt(dx * dx + dy * dy + dz * dz) || 1;
+        m.vx += (dx / dl * spd - m.vx) * min(1, 2.2 * dt);
+        m.vy += (dy / dl * spd - m.vy) * min(1, 2.2 * dt);
+        m.vz += (dz / dl * spd - m.vz) * min(1, 2.2 * dt);
+        m.x += m.vx * dt; m.y += m.vy * dt; m.z += m.vz * dt;
+        if (abs(m.vx) + abs(m.vz) > 0.5) m.yaw += angDiff(Math.atan2(-m.vx, -m.vz), m.yaw) * min(1, 3 * dt);
+        m.walk += dt;
+        if (m.phase === 'dive' && m.atkCd <= 0 && !player.dead && endGrace <= 0) {
+          var px = player.x - m.x, py = player.y + 0.9 - (m.y + 2), pz = player.z - m.z;
+          if (px * px + py * py + pz * pz < 12) { m.atkCd = 1.6; hurtPlayer(DRAGON_DMG, px * 2, pz * 2); m.phase = 'circle'; m.t = 8; }
+        }
+        m.sndT -= dt;
+        if (m.sndT <= 0) { m.sndT = 10 + Math.random() * 10; mobSound('roar'); }
+      }
+      function dragonDown(m) {
+        endState.dead = true;
+        el.itemname.textContent = 'The Ender Dragon has been defeated!';
+        el.itemname.style.opacity = 1;
+        nameT = 6;
+        mobSound('roar');
+        buildExitPortal();
+      }
+      function buildExitPortal() {   // bedrock ring with a portal back to the Overworld at the middle of the island
+        genAround(0, 0);
+        var ty = endSurface(0, 0), dx, dz, y;
+        for (dx = -3; dx <= 3; dx++) for (dz = -3; dz <= 3; dz++) {
+          var r2 = dx * dx + dz * dz;
+          if (r2 > 9) continue;
+          if (r2 <= 4) { setBlock(dx, ty, dz, B.END_PORTAL); for (y = ty - 1; y >= ty - 2; y--) setBlock(dx, y, dz, 0); }
+          else { setBlock(dx, ty, dz, B.BEDROCK); setBlock(dx, ty + 1, dz, B.BEDROCK); }
+        }
+      }
+      function populateEnd() {   // the dragon, its 12 crystals and a few Endermen
+        if (!endState.dead) {
+          spawnMob('dragon', 0, 70, 30);
+          for (var i = 0; i < 12; i++) {
+            if (endState.cr[i] === false) continue;
+            var pl = END_PILLARS[i];
+            spawnMob('endcrystal', pl.x + 0.5, pl.top + 1, pl.z + 0.5);
+            mobs[mobs.length - 1].idx = i;
+          }
+        }
+        for (var e = 0; e < 4; e++) {
+          var an = Math.random() * 6.283, r = 6 + Math.random() * 20, ex = floor(Math.cos(an) * r), ez = floor(Math.sin(an) * r), ey = endSurface(ex, ez);
+          if (ey >= 0 && sqrt((ex - player.x) * (ex - player.x) + (ez - player.z) * (ez - player.z)) > 14) spawnMob('enderman', ex + 0.5, ey + 1, ez + 0.5);
+        }
+      }
+      function updateEndSpawning(dt) {
+        endGrace = max(0, endGrace - dt);
+        spawnTimer -= dt;
+        if (spawnTimer > 0) return;
+        spawnTimer = 5;
+        var n = 0, i;
+        for (i = 0; i < mobs.length; i++) if (mobs[i].type === 'enderman') n++;
+        if (n >= 6) return;
+        var an = Math.random() * 6.283, r = 6 + Math.random() * 24, ex = floor(Math.cos(an) * r), ez = floor(Math.sin(an) * r), ey = endSurface(ex, ez);
+        if (ey >= 0 && sqrt((ex - player.x) * (ex - player.x) + (ez - player.z) * (ez - player.z)) > 16) spawnMob('enderman', ex + 0.5, ey + 1, ez + 0.5);
       }
       function shootFireball(m) {
         var sx = m.x, sy = m.y + 1.1, sz = m.z, tx = player.x - sx, ty = player.y + 1.0 - sy, tz = player.z - sz;
@@ -7670,6 +7959,14 @@
         if (m.life <= 0 || getBlockSolid(floor(m.x), floor(m.y), floor(m.z))) { m.dead = true; m.deadT = 9; }
       }
       // Nether: Zombie Pigmen roam the netherrack, Blazes haunt the fortresses, Magma Cubes hop near the lava
+      function updateBossBar() {
+        var dr = null, i;
+        for (i = 0; i < mobs.length; i++) if (mobs[i].type === 'dragon' && !mobs[i].dead) { dr = mobs[i]; break; }
+        var box = $('mc-boss');
+        if (!dr) { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        $('mc-bossbar').style.width = Math.max(0, Math.min(100, dr.hp / MOBS.dragon.hp * 100)) + '%';
+      }
       function updateNetherSpawning(dt) {
         spawnTimer -= dt;
         if (spawnTimer > 0) return;
@@ -7700,6 +7997,7 @@
       var spawnTimer = 2;
       function updateSpawning(dt) {
         if (world.dim === 1) { updateNetherSpawning(dt); return; }
+        if (world.dim === 2) { updateEndSpawning(dt); return; }
         spawnTimer -= dt;
         if (spawnTimer > 0) return;
         spawnTimer = 1.5;
@@ -7715,7 +8013,7 @@
           var t = Math.random() < 0.5 ? 'pig' : 'cow';
           for (var n = 0; n < 2 + floor(Math.random() * 2); n++) spawnMob(t, x + 0.5 + Math.random() * 3, y + 1, z + 0.5 + Math.random() * 3);
         } else if (hostile < 5 && p.mode === 'survival' && lightLevel(x, y + 1, z) < 0.3 && dist > 20) {
-          spawnMob('zombie', x + 0.5, y + 1, z + 0.5);
+          spawnMob(Math.random() < 0.1 ? 'enderman' : 'zombie', x + 0.5, y + 1, z + 0.5);
         }
       }
       function angDiff(a, b) {
@@ -7729,6 +8027,16 @@
         m.age += dt;
         if (m.dead) { m.deadT += dt; return; }
         if (def.proj) { updateFireball(m, dt); return; }
+        if (def.dragon) { updateDragon(m, dt); return; }
+        if (def.crystal) { updateCrystal(m, dt); return; }
+        if (def.teleport) {
+          m.tpT -= dt;
+          if (m.tpT <= 0) { m.tpT = 30 + Math.random() * 30; enderTeleport(m); }
+        }
+        if (def.stare && !m.angry && player.mode === 'survival' && !player.dead) {   // looking an Enderman in the eye angers it
+          var lk = lookDir(), sx = m.x - player.x, sy = m.y + 2.6 - (player.y + 1.6), sz = m.z - player.z, sl = sqrt(sx * sx + sy * sy + sz * sz);
+          if (sl < 30 && sl > 0.5 && (lk[0] * sx + lk[1] * sy + lk[2] * sz) / sl > 0.985) m.angry = 20;
+        }
         m.hurtT = max(0, m.hurtT - dt);
         m.atkCd = max(0, m.atkCd - dt);
         m.angry = max(0, (m.angry || 0) - dt);
@@ -7817,6 +8125,8 @@
         if (!silent) mobSound(MOBS[m.type].snd);
         if (m.hp <= 0) {
           m.dead = true; m.deadT = 0;
+          if (MOBS[m.type].crystal) crystalExplode(m);
+          if (MOBS[m.type].dragon) dragonDown(m);
           if (MOBS[m.type].loot) {
             if (player.mode === 'survival') MOBS[m.type].loot().forEach(function (id) { dropItem(id, m.x, m.y + 0.5, m.z); });
           } else if (player.mode === 'survival') {
@@ -8174,7 +8484,7 @@
             v: 2, id: curWorld.id, name: curWorld.name, seed: world.seed, mode: p.mode, time: gameTime, sel: sel, inv: inv,
             p: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch, health: p.dead ? 20 : p.health, flying: p.flying, food: p.dead ? 20 : p.food, sat: p.sat },
             edits: dimBlob(0).edits, flow: dimBlob(0).flow, furn: dimBlob(0).furn, armor: player.armor,
-            dim: world.dim, nedits: dimBlob(1).edits, nfurn: dimBlob(1).furn, links: portalLinks
+            dim: world.dim, nedits: dimBlob(1).edits, nfurn: dimBlob(1).furn, links: portalLinks, eedits: dimBlob(2).edits, endst: endState
           });
           localStorage.setItem(WORLD_PREFIX + curWorld.id, data);
           var list = loadIndex(), entry = null;
@@ -8262,7 +8572,7 @@
       function closeShaders() { show(el.shaders, false); }
 
       /* ---------------- Nether dimension: portals & travel ---------------- */
-      var dimData = [null, null], portalLinks = [], portalT = 0, portalWait = false;
+      var dimData = [null, null, null], portalLinks = [], portalT = 0, portalWait = false;
       function dimBlob(dim) {
         if (world.dim === dim) return { edits: world.edits, flow: world.flow, furn: world.furn };
         return dimData[dim] || { edits: {}, flow: {}, furn: {} };
@@ -8343,6 +8653,37 @@
         sTone(160, 0.9, 0.2, 'sine', 520);
         setState('loading');
       }
+      // ---- The End ----
+      function genAround2(x, z, n) { for (var dx = -n; dx <= n; dx++) for (var dz = -n; dz <= n; dz++) genNow((x >> 4) + dx, (z >> 4) + dz); }
+      function enterEnd() {
+        useDimension(2);
+        var sx = -20, sz = 0;
+        genAround2(sx, sz, 2);
+        var ty = endSurface(sx, sz), dx, dz, y;
+        for (dx = -2; dx <= 2; dx++) for (dz = -2; dz <= 2; dz++) {   // safe obsidian landing pad, with headroom
+          setBlock(sx + dx, ty, sz + dz, B.OBSIDIAN);
+          for (y = ty + 1; y <= ty + 4; y++) setBlock(sx + dx, y, sz + dz, 0);
+        }
+        player.x = sx + 0.5; player.y = ty + 1; player.z = sz + 0.5; player.yaw = -PI / 2; player.pitch = 0;
+        player.vx = player.vy = player.vz = 0; player.fallDist = 0; player.flying = false;
+        portalWait = true; portalT = 0; endGrace = 10;
+        populateEnd();
+        focusCx = floor(player.x) >> 4; focusCz = floor(player.z) >> 4;
+        neededKey = ''; loadStart = performance.now();
+        sTone(120, 1.2, 0.2, 'sine', 600);
+        setState('loading');
+      }
+      function leaveEnd() {   // back to the Overworld spawn point
+        useDimension(0);
+        genAround2(floor(spawn.x), floor(spawn.z), 2);
+        player.x = spawn.x; player.y = spawn.y; player.z = spawn.z;
+        player.vx = player.vy = player.vz = 0; player.fallDist = 0; player.flying = false;
+        portalWait = true; portalT = 0;
+        focusCx = floor(player.x) >> 4; focusCz = floor(player.z) >> 4;
+        neededKey = ''; loadStart = performance.now();
+        sTone(600, 1.0, 0.2, 'sine', 140);
+        setState('loading');
+      }
       function travelFromPlayer() {
         var p = player, x = floor(p.x), y = floor(p.y), z = floor(p.z);
         var src = scanPortal(x, floor(p.y + 0.1), z) || scanPortal(x, floor(p.y + 1), z) || [x, y, z, x, y + 2, z];
@@ -8350,8 +8691,11 @@
       }
       function updatePortal(dt) {
         var p = player, x = floor(p.x), z = floor(p.z);
-        var inP = getBlock(x, floor(p.y + 0.1), z) === B.PORTAL || getBlock(x, floor(p.y + 1), z) === B.PORTAL;
-        if (!inP) { portalWait = false; portalT = 0; return; }
+        var b0 = getBlock(x, floor(p.y + 0.1), z), b1 = getBlock(x, floor(p.y + 1), z);
+        var inE = b0 === B.END_PORTAL || b1 === B.END_PORTAL;
+        var inP = b0 === B.PORTAL || b1 === B.PORTAL;
+        if (!inP && !inE) { portalWait = false; portalT = 0; return; }
+        if (inE) { if (!portalWait) { portalWait = true; if (world.dim === 2) leaveEnd(); else enterEnd(); } return; }
         if (portalWait) return;
         if (portalT === 0) sTone(220, 0.5, 0.12, 'sine', 330);
         portalT += dt;
@@ -8427,13 +8771,15 @@
         curWorld = meta || newWorldMeta();
         mobs = []; items = []; particles = [];
         inv = new Array(36).fill(null);
-        dimData = [null, null]; portalLinks = []; portalWait = true; portalT = 0;   // wait = step out of a portal before it triggers
+        dimData = [null, null, null]; endState = { dead: false, cr: [] }; portalLinks = []; portalWait = true; portalT = 0;   // wait = step out of a portal before it triggers
         if (saved) {
           newWorld(saved.seed);
           world.edits = saved.edits || {};
           world.flow = saved.flow || {};
           world.furn = saved.furn || {};
           if (saved.nedits) dimData[1] = { edits: saved.nedits, flow: {}, furn: saved.nfurn || {} };
+          if (saved.eedits) dimData[2] = { edits: saved.eedits, flow: {}, furn: {} };
+          if (saved.endst) endState = saved.endst;
           portalLinks = saved.links || [];
         } else {
           newWorld(seedStr ? seedStr : floor(Math.random() * 1e9));
@@ -8450,7 +8796,7 @@
           gameTime = saved.time;
           inv = saved.inv && saved.inv.length === 36 ? saved.inv : inv;
           sel = saved.sel || 0;
-          if (saved.dim === 1) useDimension(1);
+          if (saved.dim) { useDimension(saved.dim); if (saved.dim === 2) { endGrace = 6; populateEnd(); } }
           genNow(player.x >> 4, player.z >> 4);
         } else {
           gameTime = 1000;
@@ -8827,10 +9173,25 @@
         mobSound('splash'); swapBucket(B.BUCKET);
         return true;
       }
+      function throwPearl() {   // teleports you to where you are looking (up to 40 blocks away)
+        var e = eyePos(), d = lookDir(), lx = player.x, ly = player.y, lz = player.z, ok = false;
+        for (var t = 0.5; t <= 40; t += 0.25) {
+          var x = e[0] + d[0] * t, y = e[1] + d[1] * t - 1.6, z = e[2] + d[2] * t;
+          if (getBlockSolid(floor(x), floor(y), floor(z)) || getBlockSolid(floor(x), floor(y + 1), floor(z))) break;
+          lx = x; ly = y; lz = z; ok = true;
+        }
+        if (!ok) return false;
+        player.x = lx; player.y = floor(ly + 0.2); player.z = lz; player.vy = 0; player.fallDist = 0;
+        mobSound('teleport');
+        takeSelected();
+        refreshHotbar();
+        return true;
+      }
       function placeBlock() {
         var s = inv[sel];
         if (s && BL[s.id].bucket) return useBucket(s);
         if (s && BL[s.id].armor) return equipArmor(sel);
+        if (s && s.id === B.ENDER_PEARL) return throwPearl();
         if (!target) return false;
         if (!s) return false;
         if (s.id === B.FLINT_STEEL) return getBlock(target.x, target.y, target.z) === B.OBSIDIAN && lightPortal(target);
@@ -8953,8 +9314,14 @@
         $('mc-modebtn').textContent = 'Game Mode: ' + (player.mode === 'creative' ? 'Creative' : 'Survival');
         $('mc-music').textContent = 'Music: ' + (musicOn ? 'ON' : 'OFF');
         var dimBtn = $('mc-dim');
-        dimBtn.style.display = player.mode === 'creative' ? '' : 'none';
+        dimBtn.style.display = player.mode === 'creative' && world && world.dim !== 2 ? '' : 'none';
         dimBtn.textContent = world && world.dim === 1 ? 'Travel to the Overworld' : 'Travel to the Nether';
+        var endBtn = $('mc-end');
+        endBtn.style.display = player.mode === 'creative' ? '' : 'none';
+        endBtn.textContent = world && world.dim === 2 ? 'Leave the End' : 'Travel to the End';
+        var hint = $('mc-shint');
+        if (world && world.dim === 0) { var shc = getStronghold(); hint.textContent = 'Stronghold with the End portal: underground near x ' + (shc.cx * 16 + 2) + ', z ' + (shc.cz * 16 + 2) + ' (follow the stairs down)'; }
+        else hint.textContent = '';
         $('mc-rd').value = renderDist; $('mc-rdv').textContent = renderDist;
         $('mc-fov').value = fovDeg; $('mc-fovv').textContent = fovDeg;
         $('mc-sens').value = sens * 10; $('mc-sensv').textContent = sens.toFixed(1);
@@ -8998,11 +9365,13 @@
           var i;
           for (i = mobs.length - 1; i >= 0; i--) {
             var m = mobs[i], dx = m.x - p.x, dz = m.z - p.z;
-            if (dx * dx + dz * dz > 80 * 80 || (m.dead && m.deadT > 0.7)) { mobs.splice(i, 1); continue; }
-            if (dx * dx + dz * dz < 64 * 64) updateMob(m, dt);
+            var keep = MOBS[m.type].persist;
+            if ((!keep && dx * dx + dz * dz > 80 * 80) || (m.dead && m.deadT > 0.7)) { mobs.splice(i, 1); continue; }
+            if (keep || dx * dx + dz * dz < 64 * 64) updateMob(m, dt);
           }
           updateItems(dt);
           updateSpawning(dt);
+          updateBossBar();
           for (i = particles.length - 1; i >= 0; i--) {
             var q = particles[i];
             q.life -= dt; q.vy -= 18 * dt;
@@ -9080,7 +9449,8 @@
         if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
         gl.viewport(0, 0, w, h);
         if (!world) { gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); return; }
-        var p = player, S = skyS, d = S.d;
+        var p = player, S = skyS, d = S.d, endDim = world.dim === 2;
+        if (endDim) d = 0;
         var cx, cy, cz, yaw, pitch, playing = state !== 'title' && state !== 'loading';
         if (playing) { var e = eyePos(); cx = e[0]; cy = e[1]; cz = e[2]; yaw = p.yaw; pitch = p.pitch; }
         else { cx = spawn.x; cy = spawn.y + 9; cz = spawn.z; yaw = elapsed * 0.07; pitch = -0.2; }
@@ -9095,6 +9465,7 @@
         var clearC = fogC;
         if (headWater) { fogC = [0.04 + 0.1 * d, 0.14 + 0.2 * d, 0.32 + 0.28 * d]; near = 0.3; far = 24; clearC = fogC; }
         var nether = world.dim === 1;
+        if (endDim) { fogC = [0.045, 0.02, 0.07]; near = 24; far = min(far, 150); clearC = fogC; }
         if (nether) { fogC = [0.2, 0.035, 0.025]; near = 6; far = min(far, 90); clearC = fogC; }
         if (headLava) { fogC = [0.6, 0.12, 0.0]; near = 0; far = 2.5; clearC = fogC; }
 
@@ -9134,6 +9505,7 @@
             gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 28, 12);
             gl.drawArrays(gl.POINTS, 0, starCount);
           }
+          if (!endDim) {
           gl.useProgram(progSky);
           gl.uniformMatrix4fv(progSky.u.uVP, false, skyM);
           gl.uniform1i(progSky.u.uTex, 0);
@@ -9148,6 +9520,7 @@
           gl.bindTexture(gl.TEXTURE_2D, texMoon);
           gl.uniform1f(progSky.u.uAlpha, min(1, max(0, (-S.e + 0.12) / 0.2)));
           gl.drawArrays(gl.TRIANGLE_FAN, 4, 4);
+          }
         }
 
         // ----- opaque world -----
@@ -9159,7 +9532,7 @@
         gl.uniform1i(wprog.u.uTex, 0);
         gl.uniformMatrix4fv(wprog.u.uVP, false, VP);
         gl.uniform3f(wprog.u.uCam, cx, cy, cz);
-        gl.uniform1f(wprog.u.uSky, nether ? 1 : 0.3 + 0.7 * d);
+        gl.uniform1f(wprog.u.uSky, (nether || endDim) ? 1 : 0.3 + 0.7 * d);
         gl.uniform1f(wprog.u.uTime, elapsed);
         gl.uniform1f(wprog.u.uMode, 0);
         gl.uniform1f(wprog.u.uWave, 0);
@@ -9195,7 +9568,7 @@
         if (particles.length) drawParticles(VP, cx, cy, cz, fogC, near, far, h);
 
         // ----- clouds -----
-        if (!headWater && !headLava && !nether) drawClouds(VP, cx, cy, cz, fogC, d, sunDir);
+        if (!headWater && !headLava && !nether && !endDim) drawClouds(VP, cx, cy, cz, fogC, d, sunDir);
 
         // ----- water (translucent) -----
         if (visWater.length) {
@@ -9211,7 +9584,7 @@
             gl.uniform1i(wprog2.u.uTex, 0);
             gl.uniformMatrix4fv(wprog2.u.uVP, false, VP);
             gl.uniform3f(wprog2.u.uCam, cx, cy, cz);
-            gl.uniform1f(wprog2.u.uSky, nether ? 1 : 0.3 + 0.7 * d);
+            gl.uniform1f(wprog2.u.uSky, (nether || endDim) ? 1 : 0.3 + 0.7 * d);
             gl.uniform1f(wprog2.u.uTime, elapsed);
             gl.uniform3f(wprog2.u.uSunDir, sunDir[0], sunDir[1], sunDir[2]);
             gl.uniform3f(wprog2.u.uSkyTop, sky[0], sky[1], sky[2]);
@@ -9302,8 +9675,10 @@
           gl.bindTexture(gl.TEXTURE_2D, texMob);
           for (i = 0; i < mobs.length; i++) {
             var m = mobs[i];
-            if (!inFrustum(m.x - 1.2, m.y - 0.1, m.z - 1.2, m.x + 1.2, m.y + 2.3, m.z + 1.2)) continue;
+            var mdef = MOBS[m.type], mR = mdef.r || 1.2;
+            if (!inFrustum(m.x - mR, m.y - 0.1, m.z - mR, m.x + mR, m.y + 2.3 + (mdef.r ? mR : 0), m.z + mR)) continue;
             var model = mMul(mTrans(m.x, m.y, m.z), mRotY(m.yaw + PI));
+            if (mdef.scale) model = mMul(model, mScale(mdef.scale, mdef.scale, mdef.scale));
             if (m.dead) model = mMul(model, mRotZ(min(1, m.deadT / 0.3) * PI / 2));
             gl.uniform1f(progEnt.u.uLight, entLight(m.x, m.y + m.h / 2, m.z));
             if (m.hurtT > 0 || m.dead) gl.uniform3f(progEnt.u.uTint, 1, 0.45, 0.45); else gl.uniform3f(progEnt.u.uTint, 1, 1, 1);
@@ -9315,10 +9690,20 @@
               else if (pt.anim === 'arm0') rot = mRotX(-PI / 2 + sw * 0.12);
               else if (pt.anim === 'arm1') rot = mRotX(-PI / 2 - sw * 0.12);
               else if (pt.anim === 'spin') rot = mRotY(m.age * pt.sp + pt.ph);
+              else if (pt.anim === 'flapL') rot = mRotZ(Math.sin(m.age * 3.2) * 0.5);
+              else if (pt.anim === 'flapR') rot = mRotZ(-Math.sin(m.age * 3.2) * 0.5);
               var pm = mTrans(pt.px / 16, pt.py / 16, pt.pz / 16);
               if (rot) pm = mMul(pm, rot);
               gl.uniformMatrix4fv(progEnt.u.uModel, false, mMul(model, pm));
               drawEntMesh(pt.m);
+            }
+            if (m.beam && !m.dead) {   // End crystal healing beam to the Ender Dragon
+              var bdx = m.beam[0] - m.x, bdy = m.beam[1] - (m.y + 0.9), bdz = m.beam[2] - m.z, bl = Math.sqrt(bdx * bdx + bdy * bdy + bdz * bdz);
+              if (bl > 0.2) {
+                var bm = mMul(mTrans(m.x, m.y + 0.9, m.z), mMul(mRotY(Math.atan2(bdx, bdz)), mMul(mRotX(-Math.asin(bdy / bl)), mScale(1, 1, bl))));
+                gl.uniformMatrix4fv(progEnt.u.uModel, false, bm);
+                drawEntMesh(MODELS.beam[0].m);
+              }
             }
           }
         }
@@ -9668,7 +10053,7 @@
       $('mc-savequit').addEventListener('click', function () { saveGame(); openMC(); });
       $('mc-exit').addEventListener('click', closeMC);
       $('mc-respawn').addEventListener('click', function () {
-        if (world && world.dim === 1) {   // died in the Nether: wake up at the world spawn in the Overworld
+        if (world && world.dim !== 0) {   // died in the Nether or the End: wake up at the world spawn in the Overworld
           useDimension(0);
           resetPlayer();
           focusCx = floor(player.x) >> 4; focusCz = floor(player.z) >> 4;
@@ -9677,6 +10062,10 @@
           return;
         }
         resetPlayer(); setState('playing'); lockPointer(); drawHearts(true);
+      });
+      $('mc-end').addEventListener('click', function () {   // creative shortcut to / from The End
+        mobSound('click');
+        if (world.dim === 2) leaveEnd(); else { if (world.dim === 1) useDimension(0); enterEnd(); }
       });
       $('mc-dim').addEventListener('click', function () {   // creative shortcut: hop to the other dimension
         mobSound('click');
@@ -9694,7 +10083,8 @@
           setTime: function (t) { gameTime = t; }, getTarget: function () { return target; }, inv: function () { return inv; },
           openInventory: openInventory, closeInventory: closeInventory, breakBlock: breakBlock, placeBlock: placeBlock,
           world: function () { return world; }, sel: function () { return sel; }, selectSlot: selectSlot, hurt: hurtPlayer,
-          spawn: function () { return spawn; }, fps: function () { return fps; }, resetPlayer: resetPlayer, showDebug: function (v) { showDebug = v; }
+          spawn: function () { return spawn; }, fps: function () { return fps; }, resetPlayer: resetPlayer, showDebug: function (v) { showDebug = v; },
+          damageMob: damageMob, endState: function () { return endState; }, getStronghold: getStronghold, END_PILLARS: END_PILLARS
         };
       }
     })();
