@@ -787,6 +787,26 @@
   .pkey.white.down { background: var(--key-w); }
   .pkey.black.down { background: var(--key-b); }
 
+  /* ---------- Cube code list (opens when a cube is clicked) ---------- */
+  .cube-list {
+    position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%); z-index: 80;
+    width: min(340px, calc(100vw - 2.4rem)); max-height: 60vh; overflow-y: auto;
+    padding: 2.6rem 1rem 1rem; border-radius: 12px; border: 2px solid var(--neon);
+    background: var(--piano-bg); color: #ffffff; box-shadow: 0 0 24px var(--neon);
+    display: none;
+  }
+  .cube-list.open { display: block; }
+  .cube-list .piano-close { top: 8px; right: 10px; }
+  .cube-list-title { position: absolute; top: 12px; left: 16px; font-weight: bold; }
+  .cube-code { padding: 0.6rem 0; border-top: 1px solid rgba(255, 255, 255, 0.25); }
+  .cube-code:first-of-type { border-top: none; }
+  .cube-code-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; }
+  .cube-step { padding: 0.2rem 0.6rem; border-radius: 999px; border: 1.5px solid var(--neon); background: rgba(0, 0, 0, 0.35); font-weight: 700; font-size: 0.95rem; }
+  .cube-step.hit { background: var(--neon); color: #000000; }
+  .cube-arrow { opacity: 0.7; }
+  .cube-code-result { font-weight: 700; }
+  .cube-code-result::before { content: "\2192  "; }
+
   .cube-scene { touch-action: none; }
   .cube-scene {
     position: fixed;
@@ -1484,6 +1504,12 @@
     </div>
   </div>
 
+  <div class="cube-list" id="cube-list" role="dialog" aria-label="Cube sequences">
+    <div class="cube-list-title">Cube sequences</div>
+    <button class="piano-close" id="cube-list-close" aria-label="Close cube sequences">&times;</button>
+    <div id="cube-list-body"></div>
+  </div>
+
   <header class="site-header">
     <div class="site-brand">
       <div class="site-name">Nikolai</div>
@@ -1809,20 +1835,59 @@
     // Easter eggs: click the cubes in order.
     //   top-right, bottom, top-left  -> piano
     //   top-left, top-right, bottom  -> arcade (15 mini games)
+    // Clicking any cube also opens a list of these sequences (see cube-list).
+    var CUBE_NAMES = ['Top-left', 'Top-right', 'Bottom'];
     var CUBE_CODES = [
-      { seq: [1, 2, 0], open: function () { openPiano(); } },
-      { seq: [0, 1, 2], open: function () { openArcade(); } }
+      { seq: [1, 2, 0], label: 'Piano', open: function () { openPiano(); } },
+      { seq: [0, 1, 2], label: 'Arcade (15 mini games)', open: function () { openArcade(); } }
     ];
     var cubeHistory = [];
+    var cubeListEl = document.getElementById('cube-list');
+    var cubeListBody = document.getElementById('cube-list-body');
+    function renderCubeList() {
+      cubeListBody.innerHTML = '';
+      CUBE_CODES.forEach(function (code) {
+        // how many steps of this sequence the latest clicks already match
+        var hit = 0;
+        for (var k = Math.min(cubeHistory.length, code.seq.length); k > 0; k--) {
+          if (cubeHistory.slice(-k).join() === code.seq.slice(0, k).join()) { hit = k; break; }
+        }
+        var row = document.createElement('div');
+        row.className = 'cube-code';
+        var steps = document.createElement('div');
+        steps.className = 'cube-code-steps';
+        code.seq.forEach(function (c, n) {
+          if (n) { var a = document.createElement('span'); a.className = 'cube-arrow'; a.textContent = '›'; steps.appendChild(a); }
+          var s = document.createElement('span');
+          s.className = 'cube-step' + (n < hit ? ' hit' : '');
+          s.textContent = (n + 1) + '. ' + CUBE_NAMES[c];
+          steps.appendChild(s);
+        });
+        var res = document.createElement('div');
+        res.className = 'cube-code-result';
+        res.textContent = code.label;
+        row.appendChild(steps);
+        row.appendChild(res);
+        cubeListBody.appendChild(row);
+      });
+    }
+    function closeCubeList() { cubeListEl.classList.remove('open'); }
+    document.getElementById('cube-list-close').addEventListener('click', closeCubeList);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCubeList(); });
     function registerCubeClick(i) {
       cubeHistory.push(i);
       if (cubeHistory.length > 3) cubeHistory.shift();
+      var fired = false;
       CUBE_CODES.forEach(function (code) {
         if (cubeHistory.join() === code.seq.join()) {
           cubeHistory = [];
+          fired = true;
           code.open();
         }
       });
+      if (fired) { closeCubeList(); return; }
+      renderCubeList();
+      cubeListEl.classList.add('open');
     }
 
     document.querySelectorAll('.cube').forEach(function (cube, cubeIndex) {
