@@ -1844,9 +1844,18 @@
     var cubeHistory = [];
     var cubeListEl = document.getElementById('cube-list');
     var cubeListBody = document.getElementById('cube-list-body');
-    function renderCubeList() {
+    var cubeOrder = [];
+    function renderCubeList(reshuffle) {
       cubeListBody.innerHTML = '';
-      CUBE_CODES.forEach(function (code) {
+      // new random order each time the list opens; kept stable while it stays open so rows don't jump
+      if (reshuffle || cubeOrder.length !== CUBE_CODES.length) {
+        cubeOrder = CUBE_CODES.slice();
+        for (var j = cubeOrder.length - 1; j > 0; j--) {
+          var r = Math.floor(Math.random() * (j + 1)), t = cubeOrder[j];
+          cubeOrder[j] = cubeOrder[r]; cubeOrder[r] = t;
+        }
+      }
+      cubeOrder.forEach(function (code) {
         // how many steps of this sequence the latest clicks already match
         var hit = 0;
         for (var k = Math.min(cubeHistory.length, code.seq.length); k > 0; k--) {
@@ -1886,7 +1895,7 @@
         }
       });
       if (fired) { closeCubeList(); return; }
-      renderCubeList();
+      renderCubeList(!cubeListEl.classList.contains('open'));
       cubeListEl.classList.add('open');
     }
 
