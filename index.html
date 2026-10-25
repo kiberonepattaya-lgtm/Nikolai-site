@@ -2388,6 +2388,9 @@
         } else if (gdTheme === 'heaven') {
           sky1 = makeLayer(120, 250, 26, 44, function (it) { it.w = 30 + Math.floor(Math.random() * 3) * 6; });
           sky2 = makeClouds();
+        } else if (gdTheme === 'hacker') {
+          sky1 = makeLayer(90, 230, 50, 110);
+          sky2 = makeLayer(40, 100, 14, 18);
         } else {
           sky1 = makeSkyline(70, 190, 34, 80);
           sky2 = makeSkyline(30, 110, 24, 56);
@@ -3034,13 +3037,16 @@
           g.addColorStop(0, '#22b9d8'); g.addColorStop(0.4, '#0a6aa0'); g.addColorStop(1, '#021a38');
         } else if (gdTheme === 'heaven') {
           g.addColorStop(0, '#4f98ea'); g.addColorStop(0.6, '#cfe6ff'); g.addColorStop(1, '#ffe9a0');
+        } else if (gdTheme === 'hacker') {
+          g.addColorStop(0, '#000000'); g.addColorStop(0.6, '#00140a'); g.addColorStop(1, '#003317');
         } else {
           g.addColorStop(0, '#03051a'); g.addColorStop(0.55, '#181046'); g.addColorStop(1, '#5a0f3a');
         }
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
 
-        if (gdTheme === 'underwater') sceneUnder();
+        if (gdTheme === 'hacker') sceneHacker();
+        else if (gdTheme === 'underwater') sceneUnder();
         else if (gdTheme === 'hell') sceneHell();
         else if (gdTheme === 'heaven') sceneHeaven();
         else sceneAnime();
@@ -3051,10 +3057,64 @@
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
 
-        if (gdTheme === 'underwater') fxUnder();
+        if (gdTheme === 'hacker') fxHacker();
+        else if (gdTheme === 'underwater') fxUnder();
         else if (gdTheme === 'hell') fxHell();
         else if (gdTheme === 'heaven') fxHeaven();
         else fxAnime();
+      }
+
+      /* ---- Hacker: matrix code rain, server racks, drifting binary ---- */
+      function sceneHacker() {
+        // distant server racks with blinking LEDs
+        eachItem(sky1, 0.12, function (it, x) {
+          var top = groundY - it.h;
+          ctx.fillStyle = 'rgba(0,18,8,0.92)';
+          ctx.fillRect(x, top, it.w, it.h);
+          ctx.strokeStyle = 'rgba(51,255,102,0.45)';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x, top, it.w, it.h);
+          for (var ry = top + 10, n = 0; ry < groundY - 8; ry += 14, n++) {
+            ctx.strokeStyle = 'rgba(51,255,102,0.22)';
+            ctx.strokeRect(x + 5, ry, it.w - 10, 9);
+            var on = Math.sin(frame * 0.05 + it.ph * 7 + n * 2.3) > 0.2;
+            ctx.fillStyle = on ? '#33ff66' : 'rgba(51,255,102,0.18)';
+            ctx.fillRect(x + 8, ry + 3, 3, 3);
+            ctx.fillStyle = (n + it.kind) % 3 === 0 ? 'rgba(255,60,60,0.8)' : 'rgba(51,255,102,0.35)';
+            ctx.fillRect(x + 16, ry + 3, (it.w - 28) * (0.3 + ((n * 37 + it.hue) % 60) / 100), 3);
+          }
+        });
+        // matrix code rain columns
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        eachItem(sky2, 0.3, function (it, x) {
+          var head = ((frame * (1.2 + it.a * 2) + it.ph * 150) % (H + 260)) - 60;
+          for (var k = 0; k < 12; k++) {
+            var cy = head - k * 16;
+            if (cy < -16 || cy > groundY) continue;
+            var ch = ((Math.floor(frame / 7) + k * 5 + it.hue) % 2) ? '1' : '0';
+            ctx.fillStyle = k === 0 ? '#d8ffe4' : 'rgba(51,255,102,' + (0.7 - k * 0.055).toFixed(2) + ')';
+            ctx.fillText(ch, x + it.w / 2, cy);
+          }
+        });
+        ctx.textAlign = 'start';
+      }
+      function fxHacker() {
+        for (var d = 0; d < dust.length; d++) {
+          var m = dust[d];
+          m.x -= speed * 0.35 * m.s + 0.2;
+          if (m.x < -8) { m.x = W + 8; m.y = Math.random() * H; }
+          ctx.fillStyle = '#33ff66';
+          ctx.shadowColor = '#33ff66';
+          ctx.shadowBlur = 6;
+          ctx.globalAlpha = 0.25 + 0.5 * Math.abs(Math.sin(frame * 0.05 + m.ph));
+          ctx.fillRect(m.x, m.y, m.r * 1.4, m.r * 1.4);
+        }
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        // faint scanlines
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        for (var sy = 0; sy < H; sy += 4) ctx.fillRect(0, sy, W, 1);
       }
 
       function tileLines(y0, y1, dir) {
@@ -3118,6 +3178,18 @@
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(cx, groundY + 4, 22 + (c * 7 % 9), Math.PI, 0); ctx.fill();
           }
+        } else if (gdTheme === 'hacker') {
+          fg = ctx.createLinearGradient(0, groundY, 0, H);
+          fg.addColorStop(0, '#003b18'); fg.addColorStop(1, '#000a04');
+          ctx.fillStyle = fg;
+          ctx.fillRect(0, groundY, W, H - groundY);
+          ctx.strokeStyle = 'rgba(51,255,102,0.35)';
+          ctx.lineWidth = 1;
+          var hoff = distance % 40;
+          ctx.beginPath();
+          for (var hx = -hoff; hx < W + 40; hx += 40) { ctx.moveTo(hx, groundY); ctx.lineTo(hx, H); }
+          for (var hy = groundY + 14; hy < H; hy += 14) { ctx.moveTo(0, hy); ctx.lineTo(W, hy); }
+          ctx.stroke();
         } else {
           fg = ctx.createLinearGradient(0, groundY, 0, H);
           fg.addColorStop(0, 'rgba(0,0,0,0.55)');
@@ -3175,6 +3247,17 @@
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(cx, ceilY - 2, 22 + (c * 5 % 9), 0, Math.PI); ctx.fill();
           }
+        } else if (gdTheme === 'hacker') {
+          cg = ctx.createLinearGradient(0, 0, 0, ceilY);
+          cg.addColorStop(0, '#000000'); cg.addColorStop(1, '#00260f');
+          ctx.fillStyle = cg;
+          ctx.fillRect(0, 0, W, ceilY);
+          ctx.strokeStyle = 'rgba(51,255,102,0.3)';
+          ctx.lineWidth = 1;
+          var coff = distance % 40;
+          ctx.beginPath();
+          for (var kx = -coff; kx < W + 40; kx += 40) { ctx.moveTo(kx, 0); ctx.lineTo(kx, ceilY); }
+          ctx.stroke();
         } else {
           cg = ctx.createLinearGradient(0, 0, 0, ceilY);
           cg.addColorStop(0, 'rgba(0,0,0,0.92)');
