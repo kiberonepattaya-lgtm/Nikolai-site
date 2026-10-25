@@ -5697,6 +5697,115 @@
           def((t + '_' + sl).toUpperCase(), ARMOR_TIERS[t].name + ' ' + ARMOR_NAMES[i], { all: t + '_' + sl, item: 1, armor: { slot: i, def: ARMOR_TIERS[t].def[i], dur: ARMOR_BASE_DUR[i] * ARMOR_TIERS[t].mult } });
         });
       });
+      // ---- Nether dimension blocks & items (appended last so saved worlds keep their ids) ----
+      GEN.nether_bricks = function (d, rnd) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var n = (rnd() - 0.5) * 8, row = floor(y / 4);
+          if ((y % 4) === 3 || (((x + (row % 2) * 4) % 8) === 7)) setpx(d, x, y, 26 + n, 10 + n, 14 + n);
+          else setpx(d, x, y, 74 + n, 28 + n, 36 + n);
+        }
+      };
+      function netherOre(name, c1, c2) {
+        GEN[name] = function (d, rnd) {
+          GEN.netherrack(d, rnd);
+          for (var k = 0; k < 7; k++) {
+            var cx = 2 + floor(rnd() * 12), cy = 2 + floor(rnd() * 12), n = 2 + floor(rnd() * 3);
+            for (var q = 0; q < n; q++) { var c = rnd() < 0.5 ? c1 : c2; setpx(d, cx + (q % 2), cy + (q > 1 ? 1 : 0), c[0], c[1], c[2]); }
+          }
+        };
+      }
+      netherOre('quartz_ore', [238, 232, 224], [206, 198, 190]);
+      netherOre('nether_gold_ore', [252, 220, 64], [214, 170, 36]);
+      GEN.quartz_block = function (d, rnd) {
+        fillNoise(d, rnd, 236, 232, 224, 5);
+        for (var i = 0; i < 16; i++) { setpx(d, i, 0, 206, 200, 192); setpx(d, i, 15, 206, 200, 192); setpx(d, 0, i, 214, 208, 200); setpx(d, 15, i, 214, 208, 200); }
+      };
+      GEN.magma = function (d, rnd) {
+        fillNoise(d, rnd, 62, 22, 16, 8);
+        for (var k = 0; k < 16; k++) {
+          var x = floor(rnd() * 14), y = floor(rnd() * 15), g = 110 + rnd() * 100;
+          setpx(d, x, y, 255, g, 20); setpx(d, x + 1, y, 255, g * 0.8, 20);
+        }
+      };
+      GEN.basalt_side = function (d, rnd) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var n = (rnd() - 0.5) * 8, v = 58 + (x % 4 === 0 ? -14 : (x % 4 === 2 ? 8 : 0));
+          setpx(d, x, y, v + n, v + n, v + 6 + n);
+        }
+      };
+      GEN.basalt_top = function (d, rnd) {
+        fillNoise(d, rnd, 70, 70, 76, 7);
+        for (var i = 3; i < 13; i++) { setpx(d, i, 3, 48, 48, 54); setpx(d, i, 12, 48, 48, 54); setpx(d, 3, i, 48, 48, 54); setpx(d, 12, i, 48, 48, 54); }
+      };
+      GEN.blackstone = function (d, rnd) {
+        fillNoise(d, rnd, 42, 38, 46, 7);
+        speckle(d, rnd, 14, 70, 58, 44, 1, 1);
+        speckle(d, rnd, 8, 28, 26, 32, 2, 1);
+      };
+      GEN.nylium_top = function (d, rnd) {
+        fillNoise(d, rnd, 152, 34, 42, 14);
+        speckle(d, rnd, 18, 108, 20, 30, 1, 1);
+        speckle(d, rnd, 10, 190, 60, 64, 1, 1);
+      };
+      GEN.nylium_side = function (d, rnd) {
+        GEN.netherrack(d, rnd);
+        for (var x = 0; x < 16; x++) {
+          var h = 3 + (rnd() < 0.5 ? 1 : 0);
+          for (var y = 0; y < h; y++) { var n = (rnd() - 0.5) * 22; setpx(d, x, y, 152 + n, 34 + n, 42 + n); }
+        }
+      };
+      GEN.shroomlight = function (d, rnd) {
+        fillNoise(d, rnd, 240, 150, 60, 14);
+        for (var k = 0; k < 9; k++) { var x = floor(rnd() * 14), y = floor(rnd() * 14); setpx(d, x, y, 255, 214, 130); setpx(d, x + 1, y, 255, 200, 110); setpx(d, x, y + 1, 255, 200, 110); }
+      };
+      GEN.wart_block = function (d, rnd) {
+        fillNoise(d, rnd, 124, 12, 16, 14);
+        speckle(d, rnd, 22, 176, 28, 28, 1, 1);
+        speckle(d, rnd, 12, 84, 6, 10, 1, 1);
+      };
+      GEN.crimson_stem_side = function (d, rnd) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var n = (rnd() - 0.5) * 10, v = (x % 5 === 0) ? -22 : 0;
+          setpx(d, x, y, 118 + v + n, 48 + v + n, 74 + v + n);
+        }
+      };
+      GEN.crimson_stem_top = function (d, rnd) {
+        fillNoise(d, rnd, 172, 62, 84, 8);
+        for (var i = 2; i < 14; i++) { setpx(d, i, 2, 116, 40, 62); setpx(d, i, 13, 116, 40, 62); setpx(d, 2, i, 116, 40, 62); setpx(d, 13, i, 116, 40, 62); }
+      };
+      GEN.nether_portal = function (d, rnd) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var w = Math.sin((x * 0.9 + y * 0.6)) * 0.5 + 0.5, n = rnd();
+          if (n < 0.18) { setpx(d, x, y, 0, 0, 0, 0); continue; }
+          setpx(d, x, y, 90 + 90 * w + n * 30, 20 + 40 * w, 170 + 70 * w, 255);
+        }
+      };
+      gemTile('quartz_item', [236, 230, 222]);
+      GEN.flint_steel = function (d) {
+        itemClear(d);
+        for (var y = 6; y < 13; y++) for (var x = 2; x < 9; x++) pxc(d, x, y, (x + y) % 2 ? [150, 150, 158] : [120, 120, 128]);
+        for (var k = 0; k < 6; k++) { pxc(d, 8 + k, 9 - k, [72, 72, 78]); pxc(d, 9 + k, 9 - k, [52, 52, 58]); }
+        pxc(d, 12, 3, [255, 190, 60]); pxc(d, 13, 2, [255, 120, 30]);
+      };
+      GEN.blaze_rod = function (d) {
+        itemClear(d);
+        for (var k = 0; k < 12; k++) { pxc(d, 2 + k, 13 - k, [255, 200, 40]); pxc(d, 3 + k, 13 - k, [226, 130, 20]); }
+      };
+      def('NETHER_BRICKS', 'Nether Bricks', { all: 'nether_bricks', opaque: 1, solid: 1, hard: 2 });
+      def('QUARTZ_ORE', 'Nether Quartz Ore', { all: 'quartz_ore', opaque: 1, solid: 1, hard: 3, drop: 'QUARTZ' });
+      def('NETHER_GOLD', 'Nether Gold Ore', { all: 'nether_gold_ore', opaque: 1, solid: 1, hard: 3, drop: 'GOLD_INGOT' });
+      def('QUARTZ_BLOCK', 'Block of Quartz', { all: 'quartz_block', opaque: 1, solid: 1, hard: 0.8 });
+      def('MAGMA', 'Magma Block', { all: 'magma', opaque: 1, solid: 1, hard: 0.5, light: 8 });
+      def('BASALT', 'Basalt', { top: 'basalt_top', bottom: 'basalt_top', side: 'basalt_side', opaque: 1, solid: 1, hard: 1.25 });
+      def('BLACKSTONE', 'Blackstone', { all: 'blackstone', opaque: 1, solid: 1, hard: 1.5 });
+      def('NYLIUM', 'Crimson Nylium', { top: 'nylium_top', bottom: 'netherrack', side: 'nylium_side', opaque: 1, solid: 1, hard: 0.4, drop: 'NETHERRACK' });
+      def('SHROOMLIGHT', 'Shroomlight', { all: 'shroomlight', opaque: 1, solid: 1, hard: 1, light: 15, snd: 'grass' });
+      def('WART_BLOCK', 'Nether Wart Block', { all: 'wart_block', opaque: 1, solid: 1, hard: 1, snd: 'grass' });
+      def('CRIMSON_STEM', 'Crimson Stem', { top: 'crimson_stem_top', bottom: 'crimson_stem_top', side: 'crimson_stem_side', opaque: 1, solid: 1, hard: 2, snd: 'wood' });
+      def('PORTAL', 'Nether Portal', { all: 'nether_portal', cut: 1, hard: 0, light: 11, snd: 'glass', drop: null, creative: false });
+      def('QUARTZ', 'Nether Quartz', { all: 'quartz_item', item: 1 });
+      def('FLINT_STEEL', 'Flint and Steel', { all: 'flint_steel', item: 1 });
+      def('BLAZE_ROD', 'Blaze Rod', { all: 'blaze_rod', item: 1 });
       for (var di = 0; di < 10; di++) tile('destroy_' + di);
       var NB = BL.length;
       BL.forEach(function (b) {
@@ -5768,6 +5877,7 @@
         var s = typeof seed === 'number' ? seed : hashStr(String(seed));
         world = {
           seed: s | 0,
+          dim: 0,                       // 0 = Overworld, 1 = Nether
           chunks: new Map(),
           edits: {},
           flow: {}, wq: [], wqs: {}, furn: {},
@@ -5800,7 +5910,131 @@
         ciH = hi; ciB = b; ciTemp = temp;
       }
 
+      /* ---------------- Nether terrain ---------------- */
+      function genNether(cx, cz) {
+        var W = world, blocks = new Uint8Array(CH * CH * WH), x0 = cx * CH, z0 = cz * CH, LAYER = CH * CH;
+        var rng = mulberry32((hash2(cx, cz, W.seed + 500) * 4294967296) | 0);
+        var NR = B.NETHERRACK, lx, lz, y, wx, wz, i;
+        for (lz = 0; lz < CH; lz++) for (lx = 0; lx < CH; lx++) {
+          wx = x0 + lx; wz = z0 + lz;
+          for (y = 0; y < WH; y++) {
+            var id = 0;
+            if (y <= 1 || y >= WH - 2) id = B.BEDROCK;
+            else if (y >= WH - 6) id = NR;
+            else {
+              var v = W.nCaveA.n3(wx * 0.02, y * 0.04, wz * 0.02) * 0.7 + W.nCaveB.n3(wx * 0.05 + 40, y * 0.09, wz * 0.05 - 40) * 0.3;
+              var bias = 0;
+              if (y > 64) bias = (y - 64) * 0.05;
+              if (y < 28) bias = max(bias, (28 - y) * 0.06);
+              if (v + bias > 0.1) id = NR;
+            }
+            if (id === 0 && y <= 31) id = B.LAVA;
+            blocks[(y * CH + lz) * CH + lx] = id;
+          }
+        }
+        // surface materials: soul sand valleys, crimson forests, basalt and blackstone pockets, magma by the lava
+        for (lz = 0; lz < CH; lz++) for (lx = 0; lx < CH; lx++) {
+          wx = x0 + lx; wz = z0 + lz;
+          var m = W.nMisc.n2(wx * 0.025, wz * 0.025);
+          for (y = 2; y < WH - 6; y++) {
+            i = (y * CH + lz) * CH + lx;
+            if (blocks[i] !== NR) continue;
+            var g = W.nCaveC.n3(wx * 0.04, y * 0.08, wz * 0.04);
+            if (g > 0.48) { blocks[i] = B.BASALT; continue; }
+            if (g < -0.5) { blocks[i] = B.BLACKSTONE; continue; }
+            var up = blocks[i + LAYER];
+            if (up === 0) {
+              if (m > 0.3) blocks[i] = B.SOULSAND;
+              else if (m < -0.3) blocks[i] = B.NYLIUM;
+            } else if (up === B.LAVA && y <= 32 && hash2(wx, wz + y, W.seed + 31) < 0.3) blocks[i] = B.MAGMA;
+          }
+        }
+        function put(px, py, pz, id2, onlyAir) {
+          var ax = px - x0, az = pz - z0;
+          if (ax < 0 || ax >= CH || az < 0 || az >= CH || py < 2 || py >= WH - 6) return;
+          var i2 = (py * CH + az) * CH + ax;
+          if (onlyAir && blocks[i2] !== 0) return;
+          blocks[i2] = id2;
+        }
+        // crimson trees on the nylium
+        for (lz = 2; lz < CH - 2; lz++) for (lx = 2; lx < CH - 2; lx++) {
+          wx = x0 + lx; wz = z0 + lz;
+          if (hash2(wx, wz, W.seed + 41) > 0.012) continue;
+          for (y = WH - 8; y > 2; y--) {
+            i = (y * CH + lz) * CH + lx;
+            if (blocks[i] === B.NYLIUM && blocks[i + LAYER] === 0 && blocks[i + LAYER * 2] === 0 && blocks[i + LAYER * 3] === 0) {
+              var th = 4 + floor(hash2(wx, wz, W.seed + 42) * 3), tk, dx, dz;
+              if (y + th + 3 >= WH - 6) break;
+              for (tk = 1; tk <= th; tk++) put(wx, y + tk, wz, B.CRIMSON_STEM, true);
+              for (tk = th - 1; tk <= th + 1; tk++) for (dx = -2; dx <= 2; dx++) for (dz = -2; dz <= 2; dz++) {
+                if (abs(dx) === 2 && abs(dz) === 2) continue;
+                put(wx + dx, y + tk, wz + dz, (dx === 0 && dz === 0 && tk === th + 1) ? B.SHROOMLIGHT : (hash2(wx + dx, wz + dz + tk, W.seed + 43) < 0.12 ? B.SHROOMLIGHT : B.WART_BLOCK), true);
+              }
+              break;
+            }
+            if (blocks[i] !== 0 && blocks[i] !== B.LAVA) { if (blocks[i + LAYER] !== 0) break; }
+          }
+        }
+        // veins of ore in the netherrack
+        var veins = [[B.QUARTZ_ORE, 18, 6, 6, 88], [B.NETHER_GOLD, 12, 5, 6, 88], [B.MAGMA, 6, 5, 22, 36]];
+        veins.forEach(function (o) {
+          for (var t = 0; t < o[1]; t++) {
+            var ox = floor(rng() * CH), oy = o[3] + floor(rng() * (o[4] - o[3])), oz = floor(rng() * CH);
+            for (var s = 0; s < o[2]; s++) {
+              if (ox < 0 || ox >= CH || oz < 0 || oz >= CH || oy < 2 || oy >= WH - 6) break;
+              var ii = (oy * CH + oz) * CH + ox;
+              if (blocks[ii] === NR) blocks[ii] = o[0];
+              ox += floor(rng() * 3) - 1; oy += floor(rng() * 3) - 1; oz += floor(rng() * 3) - 1;
+            }
+          }
+        });
+        // glowstone clusters hanging from the cavern ceilings
+        for (var gt = 0; gt < 7; gt++) {
+          var gx = 1 + floor(rng() * (CH - 2)), gz = 1 + floor(rng() * (CH - 2));
+          for (y = WH - 8; y > 36; y--) {
+            i = (y * CH + gz) * CH + gx;
+            if (blocks[i] === 0 && blocks[i + LAYER] === NR) {
+              var cx2 = gx, cz2 = gz, cy2 = y + 1;
+              for (var gs = 0; gs < 9; gs++) {
+                if (cx2 > 0 && cx2 < CH - 1 && cz2 > 0 && cz2 < CH - 1 && cy2 < WH - 6) {
+                  var gi = (cy2 * CH + cz2) * CH + cx2;
+                  if (blocks[gi] === NR || blocks[gi] === 0) blocks[gi] = B.GLOW;
+                }
+                cx2 += floor(rng() * 3) - 1; cz2 += floor(rng() * 3) - 1; cy2 -= floor(rng() * 2);
+              }
+              break;
+            }
+          }
+        }
+        // nether fortress outposts: a brick platform with walls, lit by glowstone
+        if (hash2(cx, cz, W.seed + 777) < 0.07) {
+          var fy = 46, fx, fz, fk;
+          for (fx = 2; fx <= 13; fx++) for (fz = 2; fz <= 13; fz++) {
+            put(x0 + fx, fy, z0 + fz, B.NETHER_BRICKS, false);
+            for (fk = 1; fk <= 5; fk++) {
+              var edge = fx === 2 || fx === 13 || fz === 2 || fz === 13;
+              var gap = (fx === 7 || fx === 8 || fz === 7 || fz === 8) && fk <= 3;
+              put(x0 + fx, fy + fk, z0 + fz, (edge && fk <= 4 && !gap) ? ((fk === 4 && (fx + fz) % 3 === 0) ? B.GLOW : B.NETHER_BRICKS) : 0, false);
+            }
+          }
+          for (fk = fy - 1; fk > 2; fk--) {
+            var pc = [[2, 2], [13, 2], [2, 13], [13, 13]], stop = true;
+            pc.forEach(function (c) { var pi2 = (fk * CH + c[1]) * CH + c[0]; if (blocks[pi2] === 0 || blocks[pi2] === B.LAVA) { blocks[pi2] = B.NETHER_BRICKS; stop = false; } });
+            if (stop) break;
+          }
+        }
+        var chunk = {
+          cx: cx, cz: cz, x0: x0, z0: z0, blocks: blocks, light: new Uint8Array(CH * CH * WH),
+          state: 1, lit: false, meshOp: null, meshWt: null, needMesh: true, version: 0
+        };
+        var ed = W.edits[ckey(cx, cz)];
+        if (ed) for (var k2 in ed) blocks[+k2] = ed[k2];
+        W.chunks.set(ckey(cx, cz), chunk);
+        return chunk;
+      }
+
       function genChunk(cx, cz) {
+        if (world.dim === 1) return genNether(cx, cz);
         var W = world, blocks = new Uint8Array(CH * CH * WH), x0 = cx * CH, z0 = cz * CH;
         var rng = mulberry32((hash2(cx, cz, W.seed) * 4294967296) | 0);
         var lx, lz, y, wx, wz;
@@ -6063,7 +6297,11 @@
         if (qt) bfs(rk, 0, qt);
         for (lz = 0; lz < CH; lz++) for (lx = 0; lx < CH; lx++) {
           var rr = ((lz + 8) << 5) | (lx + 8), cc = lz * CH + lx;
-          for (y = 0; y < WH; y++) chunk.light[y * 256 + cc] = (rs[(y << 10) | rr] << 4) | rk[(y << 10) | rr];
+          for (y = 0; y < WH; y++) {
+            var skl = rs[(y << 10) | rr];
+            if (world.dim === 1 && skl < 7 && !OPAQUE[rb[(y << 10) | rr]]) skl = 7;   // Nether: dim red ambient light, no sunlight
+            chunk.light[y * 256 + cc] = (skl << 4) | rk[(y << 10) | rr];
+          }
         }
         chunk.lit = true;
       }
@@ -6910,7 +7148,46 @@
       };
       MOBGEN.zom_leg = function (d, r) { fillNoise(d, r, 44, 54, 150, 10); };
       MOBGEN.hand = function (d, r) { fillNoise(d, r, 204, 152, 122, 8); };
-      ['pig_skin', 'pig_face', 'pig_snout', 'cow_skin', 'cow_face', 'cow_leg', 'zom_head', 'zom_face', 'zom_body', 'zom_arm', 'zom_leg', 'hand'].forEach(mt);
+      /* ---- Nether mobs: Zombie Pigman, Blaze, Magma Cube, fireball ---- */
+      MOBGEN.pgm_head = function (d, r) { fillNoise(d, r, 178, 120, 112, 10); };
+      MOBGEN.pgm_face = function (d, r) {
+        fillNoise(d, r, 178, 120, 112, 10);
+        for (var y = 9; y < 13; y++) for (var x = 5; x < 11; x++) setpx(d, x, y, 150 + (r() - 0.5) * 8, 92, 90);
+        setpx(d, 6, 10, 70, 30, 34); setpx(d, 9, 10, 70, 30, 34);
+        setpx(d, 4, 12, 236, 232, 210); setpx(d, 11, 12, 236, 232, 210);
+        eyes(d, 3, 11, 5, [210, 40, 30]);
+      };
+      MOBGEN.pgm_snout = function (d, r) { fillNoise(d, r, 150, 92, 90, 6); setpx(d, 1, 1, 70, 30, 34); setpx(d, 2, 1, 70, 30, 34); };
+      MOBGEN.pgm_body = function (d, r) {
+        fillNoise(d, r, 148, 104, 52, 9);
+        for (var x = 0; x < 16; x++) { setpx(d, x, 12, 236, 196, 60); setpx(d, x, 13, 236, 196, 60); }
+      };
+      MOBGEN.pgm_arm = function (d, r) {
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          var n = (r() - 0.5) * 12;
+          if (y < 5) setpx(d, x, y, 236 + n, 196 + n, 60 + n); else setpx(d, x, y, 178 + n, 120 + n, 112 + n);
+        }
+      };
+      MOBGEN.pgm_leg = function (d, r) { fillNoise(d, r, 92, 60, 40, 9); };
+      MOBGEN.blz_head = function (d, r) { fillNoise(d, r, 244, 184, 40, 12); };
+      MOBGEN.blz_face = function (d, r) {
+        fillNoise(d, r, 244, 184, 40, 12);
+        eyes(d, 3, 11, 6, [40, 24, 8]);
+        for (var x = 5; x < 11; x++) setpx(d, x, 12, 90, 40, 10);
+      };
+      MOBGEN.blz_rod = function (d, r) { fillNoise(d, r, 255, 210, 50, 14); for (var y = 0; y < 16; y += 4) for (var x = 0; x < 16; x++) setpx(d, x, y, 226, 130, 20); };
+      MOBGEN.mag_body = function (d, r) {
+        fillNoise(d, r, 70, 24, 16, 9);
+        for (var k = 0; k < 20; k++) { var x = floor(r() * 15), y = floor(r() * 15), g = 120 + r() * 100; setpx(d, x, y, 255, g, 20); setpx(d, x + 1, y, 255, g * 0.8, 20); }
+      };
+      MOBGEN.mag_face = function (d, r) {
+        MOBGEN.mag_body(d, r);
+        for (var y = 5; y < 8; y++) { for (var x = 2; x < 6; x++) setpx(d, x, y, 255, 240, 90); for (var x2 = 10; x2 < 14; x2++) setpx(d, x2, y, 255, 240, 90); }
+        for (var m = 4; m < 12; m++) setpx(d, m, 11, 30, 8, 6);
+      };
+      MOBGEN.fire_ball = function (d, r) { fillNoise(d, r, 255, 170, 30, 30); for (var i = 0; i < 20; i++) setpx(d, floor(r() * 16), floor(r() * 16), 255, 235, 140); };
+      ['pig_skin', 'pig_face', 'pig_snout', 'cow_skin', 'cow_face', 'cow_leg', 'zom_head', 'zom_face', 'zom_body', 'zom_arm', 'zom_leg', 'hand',
+        'pgm_head', 'pgm_face', 'pgm_snout', 'pgm_body', 'pgm_arm', 'pgm_leg', 'blz_head', 'blz_face', 'blz_rod', 'mag_body', 'mag_face', 'fire_ball'].forEach(mt);
       function buildMobAtlas() {
         var cv = document.createElement('canvas');
         cv.width = cv.height = 256;
@@ -6927,7 +7204,15 @@
       var MOBS = {
         pig: { hp: 10, w: 0.45, h: 0.9, speed: 1.4, passive: true, snd: 'pig' },
         cow: { hp: 10, w: 0.45, h: 1.4, speed: 1.2, passive: true, snd: 'cow' },
-        zombie: { hp: 20, w: 0.3, h: 1.95, speed: 2.5, passive: false, snd: 'zombie' }
+        zombie: { hp: 20, w: 0.3, h: 1.95, speed: 2.5, passive: false, snd: 'zombie' },
+        // Nether mobs
+        pigman: { hp: 20, w: 0.3, h: 1.95, speed: 2.6, passive: false, neutral: true, dmg: 5, snd: 'zombie', fireproof: true,
+          loot: function () { var o = []; if (Math.random() < 0.6) o.push(B.GOLD_INGOT); if (Math.random() < 0.25) o.push(B.GOLD_INGOT); return o; } },
+        blaze: { hp: 20, w: 0.3, h: 1.8, speed: 2.2, passive: false, fly: true, shoots: true, dmg: 3, snd: 'zombie', fireproof: true,
+          loot: function () { return Math.random() < 0.6 ? [B.BLAZE_ROD] : []; } },
+        magmacube: { hp: 16, w: 0.42, h: 0.8, speed: 3.0, passive: false, hop: true, dmg: 4, snd: 'pig', fireproof: true,
+          loot: function () { return Math.random() < 0.6 ? [B.MAGMA] : []; } },
+        fireball: { hp: 1, w: 0.2, h: 0.4, speed: 0, passive: false, proj: true, snd: 'pop', fireproof: true }
       };
       var MODELS = null;
       function bx(wpx, hpx, dpx, cx, cy, cz, tiles) {
@@ -6938,7 +7223,30 @@
         var ZH = mt('zom_head'), ZF = mt('zom_face'), ZB = mt('zom_body'), ZA = mt('zom_arm'), ZL = mt('zom_leg');
         function same(t) { return [t, t, t, t, t, t]; }
         function legMesh(w, h, tile) { return bx(w, h, w, 0, -h / 2, 0, same(tile)); }
+        var PGH = mt('pgm_head'), PGF = mt('pgm_face'), PGS = mt('pgm_snout'), PGB = mt('pgm_body'), PGA = mt('pgm_arm'), PGL = mt('pgm_leg');
+        var BZH = mt('blz_head'), BZF = mt('blz_face'), BZR = mt('blz_rod'), MGB = mt('mag_body'), MGF = mt('mag_face'), FBL = mt('fire_ball');
+        var blazeRods = [];
+        [[22, 6.5, 0, 2.4], [15, 6.5, 0.785, -2.0], [8, 6.5, 0.4, 2.8]].forEach(function (ring) {
+          for (var k = 0; k < 4; k++) blazeRods.push({ m: bx(2, 7, 2, ring[1], 0, 0, same(BZR)), px: 0, py: ring[0], pz: 0, anim: 'spin', ph: ring[2] + k * PI / 2, sp: ring[3] });
+        });
         MODELS = {
+          pigman: [
+            { m: bx(8, 12, 4, 0, 0, 0, same(PGB)), px: 0, py: 18, pz: 0 },
+            { m: bx(8, 8, 8, 0, 0, 0, [PGH, PGH, PGH, PGH, PGF, PGH]), px: 0, py: 28, pz: 0, anim: 'head' },
+            { m: bx(4, 3, 1, 0, 0, 0, same(PGS)), px: 0, py: 27, pz: 4.6, anim: 'head' },
+            { m: legMesh(4, 12, PGL), px: -2, py: 12, pz: 0, anim: 'l0' }, { m: legMesh(4, 12, PGL), px: 2, py: 12, pz: 0, anim: 'l1' },
+            { m: bx(4, 12, 4, 0, -6, 0, same(PGA)), px: -6, py: 24, pz: 0, anim: 'arm0' }, { m: bx(4, 12, 4, 0, -6, 0, same(PGA)), px: 6, py: 24, pz: 0, anim: 'arm1' }
+          ],
+          blaze: [
+            { m: bx(4, 7, 4, 0, 0, 0, same(BZR)), px: 0, py: 15, pz: 0 },
+            { m: bx(8, 8, 8, 0, 0, 0, [BZH, BZH, BZH, BZH, BZF, BZH]), px: 0, py: 27, pz: 0, anim: 'head' }
+          ].concat(blazeRods),
+          magmacube: [
+            { m: bx(12, 12, 12, 0, 0, 0, [MGB, MGB, MGB, MGB, MGF, MGB]), px: 0, py: 6, pz: 0 }
+          ],
+          fireball: [
+            { m: bx(5, 5, 5, 0, 0, 0, same(FBL)), px: 0, py: 3, pz: 0 }
+          ],
           pig: [
             { m: bx(10, 8, 14, 0, 0, 0, same(P)), px: 0, py: 10, pz: 0 },
             { m: bx(8, 8, 8, 0, 0, 0, [P, P, P, P, PF, P]), px: 0, py: 11.5, pz: 10, anim: 'head' },
@@ -7065,7 +7373,7 @@
         return '';
       }
       // minimum pickaxe level an ore needs before it drops anything
-      var ORE_REQ = { COPPER_ORE: 1, IRON: 1, LAPIS: 1, GOLD: 2, REDSTONE: 2, DIAMOND: 2, EMERALD: 2, OBSIDIAN: 3 };
+      var ORE_REQ = { COPPER_ORE: 1, IRON: 1, LAPIS: 1, GOLD: 2, REDSTONE: 2, DIAMOND: 2, EMERALD: 2, OBSIDIAN: 3, QUARTZ_ORE: 1, NETHER_GOLD: 1 };
       function canHarvest(b) {
         var r = ORE_REQ[b.key];
         if (r === undefined) return true;
@@ -7334,10 +7642,58 @@
       }
       function lightLevel(x, y, z) {
         var l = getLightRaw(x, y, z);
-        return max((l >> 4) / 15 * skyFactor(), (l & 15) / 15);
+        return max((l >> 4) / 15 * (world && world.dim === 1 ? 1 : skyFactor()), (l & 15) / 15);
+      }
+      function shootFireball(m) {
+        var sx = m.x, sy = m.y + 1.1, sz = m.z, tx = player.x - sx, ty = player.y + 1.0 - sy, tz = player.z - sz;
+        var l = sqrt(tx * tx + ty * ty + tz * tz) || 1;
+        spawnMob('fireball', sx, sy, sz);
+        var f = mobs[mobs.length - 1];
+        f.vx = tx / l * 9; f.vy = ty / l * 9; f.vz = tz / l * 9; f.life = 4;
+        mobSound('pop');
+      }
+      function updateFireball(m, dt) {
+        m.x += m.vx * dt; m.y += m.vy * dt; m.z += m.vz * dt;
+        m.life -= dt; m.yaw += dt * 8;
+        var dx = player.x - m.x, dy = player.y + 0.9 - m.y, dz = player.z - m.z;
+        if (!player.dead && dx * dx + dy * dy + dz * dz < 0.7) {
+          hurtPlayer(4, m.vx * 0.5, m.vz * 0.5);
+          m.dead = true; m.deadT = 9;
+          return;
+        }
+        if (m.life <= 0 || getBlockSolid(floor(m.x), floor(m.y), floor(m.z))) { m.dead = true; m.deadT = 9; }
+      }
+      // Nether: Zombie Pigmen roam the netherrack, Blazes haunt the fortresses, Magma Cubes hop near the lava
+      function updateNetherSpawning(dt) {
+        spawnTimer -= dt;
+        if (spawnTimer > 0) return;
+        spawnTimer = 2;
+        var p = player, n = 0, i;
+        for (i = 0; i < mobs.length; i++) if (!MOBS[mobs[i].type].proj) n++;
+        if (n >= 14) return;
+        for (var tries = 0; tries < 8; tries++) {
+          var ang = Math.random() * 6.283, dist = 16 + Math.random() * 18;
+          var x = floor(p.x + Math.cos(ang) * dist), z = floor(p.z + Math.sin(ang) * dist);
+          var c = getChunk(x >> 4, z >> 4);
+          if (!c || !c.lit) continue;
+          for (var y = min(WH - 8, floor(p.y) + 12); y > max(4, floor(p.y) - 24); y--) {
+            var below = getBlock(x, y - 1, z);
+            if (!SOLID[below] || LIQUID[below] || getBlock(x, y, z) !== 0 || getBlock(x, y + 1, z) !== 0) continue;
+            var survival = p.mode === 'survival', r = Math.random();
+            if (survival && (below === B.NETHER_BRICKS || r < 0.1) && getBlock(x, y + 2, z) === 0 && getBlock(x, y + 3, z) === 0) {
+              spawnMob('blaze', x + 0.5, y + 2, z + 0.5);
+            } else if (survival && (below === B.MAGMA || below === B.BASALT || below === B.BLACKSTONE || r < 0.3)) {
+              spawnMob('magmacube', x + 0.5, y, z + 0.5);
+            } else {
+              for (var q = 0, pk = 1 + floor(Math.random() * 3); q < pk; q++) spawnMob('pigman', x + 0.5 + Math.random() * 2, y, z + 0.5 + Math.random() * 2);
+            }
+            return;
+          }
+        }
       }
       var spawnTimer = 2;
       function updateSpawning(dt) {
+        if (world.dim === 1) { updateNetherSpawning(dt); return; }
         spawnTimer -= dt;
         if (spawnTimer > 0) return;
         spawnTimer = 1.5;
@@ -7366,8 +7722,11 @@
         var def = MOBS[m.type];
         m.age += dt;
         if (m.dead) { m.deadT += dt; return; }
+        if (def.proj) { updateFireball(m, dt); return; }
         m.hurtT = max(0, m.hurtT - dt);
         m.atkCd = max(0, m.atkCd - dt);
+        m.angry = max(0, (m.angry || 0) - dt);
+        m.chase = false;
         var dxp = player.x - m.x, dzp = player.z - m.z, dist = sqrt(dxp * dxp + dzp * dzp), spd = 0;
         if (def.passive) {
           if (m.flee > 0) { m.flee -= dt; spd = def.speed * 2.4; }
@@ -7380,12 +7739,18 @@
             spd = m.wander ? def.speed : 0;
           }
         } else {
-          if (player.mode === 'survival' && !player.dead && dist < 28 && dist > 0.01) {
+          if (player.mode === 'survival' && !player.dead && dist < 28 && dist > 0.01 && (!def.neutral || m.angry > 0)) {
             m.tyaw = Math.atan2(-dxp, -dzp);
             spd = def.speed;
+            m.chase = true;
             if (dist < 1.25 && abs(player.y - m.y) < 1.6 && m.atkCd <= 0) {
               m.atkCd = 1.0;
-              hurtPlayer(3, dxp / dist * 6, dzp / dist * 6);
+              hurtPlayer(def.dmg || 3, dxp / dist * 6, dzp / dist * 6);
+            }
+            if (def.shoots) {   // Blaze: keeps its distance and throws fireballs
+              if (dist < 7) spd = 0;
+              m.shootT = (m.shootT === undefined ? 1.5 : m.shootT) - dt;
+              if (m.shootT <= 0 && dist < 24) { m.shootT = 2.4; shootFireball(m); }
             }
           } else {
             m.aiT -= dt;
@@ -7401,21 +7766,31 @@
         }
         if (m.flee > 0 && def.passive) m.tyaw = Math.atan2(dxp, dzp);
         m.yaw += max(-6 * dt, min(6 * dt, angDiff(m.tyaw, m.yaw)));
+        if (def.hop) {   // Magma Cube: moves only in hops
+          m.hopT = max(0, (m.hopT || 0) - dt);
+          if (m.onGround) {
+            if (spd > 0 && m.hopT <= 0) { m.vy = 7.4; m.hopT = 0.7 + Math.random() * 0.5; }
+            else spd = 0;
+          }
+        }
         var wx = -Math.sin(m.yaw) * spd, wz = -Math.cos(m.yaw) * spd;
         m.vx += (wx - m.vx) * min(1, 8 * dt);
         m.vz += (wz - m.vz) * min(1, 8 * dt);
         var inWater = getBlock(floor(m.x), floor(m.y + 0.3), floor(m.z)) === B.WATER;
-        if (inWater) { m.vy = min(2, m.vy + 20 * dt); } else { m.vy -= 28 * dt; if (m.vy < -50) m.vy = -50; }
-        if (spd > 0 && (m.hitX || m.hitZ) && m.onGround) m.vy = 8.2;
+        if (def.fly) {   // Blaze: hovers, drifting toward the player's height
+          var ty = m.chase ? player.y + 1.6 : m.y + Math.sin(m.age * 1.5) * 0.6;
+          m.vy += (max(-3, min(3, ty - m.y)) - m.vy) * min(1, 3 * dt);
+        } else if (inWater) { m.vy = min(2, m.vy + 20 * dt); } else { m.vy -= 28 * dt; if (m.vy < -50) m.vy = -50; }
+        if (spd > 0 && (m.hitX || m.hitZ) && (m.onGround || def.fly)) m.vy = def.fly ? 4 : 8.2;
         var myBefore = m.y;
         moveEntity(m, dt, false);
-        if (inWater) m.fall = 0;
+        if (inWater || def.fireproof) m.fall = 0;
         else if (m.y < myBefore) m.fall = (m.fall || 0) + myBefore - m.y;
         if (m.onGround) {
           if (m.fall > 3.5) damageMob(m, Math.ceil(m.fall - 3), 0, 0, true);
           m.fall = 0;
         }
-        if (getBlock(floor(m.x), floor(m.y + 0.2), floor(m.z)) === B.LAVA) {
+        if (!def.fireproof && getBlock(floor(m.x), floor(m.y + 0.2), floor(m.z)) === B.LAVA) {
           m.lavaT = (m.lavaT || 0) + dt;
           if (m.lavaT > 0.5) { m.lavaT = 0; damageMob(m, 4, 0, 0, true); }
         }
@@ -7430,10 +7805,15 @@
         m.hurtT = 0.45;
         m.vx += kx * 7; m.vz += kz * 7; m.vy = 4.5;
         if (MOBS[m.type].passive) m.flee = 4;
+        if (MOBS[m.type].neutral && !silent) {   // Zombie Pigmen: the whole pack turns on you
+          mobs.forEach(function (o) { if (o.type === m.type && !o.dead && abs(o.x - m.x) < 16 && abs(o.z - m.z) < 16) o.angry = 30; });
+        }
         if (!silent) mobSound(MOBS[m.type].snd);
         if (m.hp <= 0) {
           m.dead = true; m.deadT = 0;
-          if (player.mode === 'survival') {
+          if (MOBS[m.type].loot) {
+            if (player.mode === 'survival') MOBS[m.type].loot().forEach(function (id) { dropItem(id, m.x, m.y + 0.5, m.z); });
+          } else if (player.mode === 'survival') {
             var loot = m.type === 'pig' ? B.RAW_PORK : (m.type === 'cow' ? B.RAW_BEEF : 0);
             for (var q = 0, nq = loot ? 1 + floor(Math.random() * 2.99) : 0; q < nq; q++) dropItem(loot, m.x, m.y + 0.5, m.z);
           }
@@ -8569,6 +8949,8 @@
         var far = renderDist * 16 - 6, near = far * 0.55;
         var clearC = fogC;
         if (headWater) { fogC = [0.04 + 0.1 * d, 0.14 + 0.2 * d, 0.32 + 0.28 * d]; near = 0.3; far = 24; clearC = fogC; }
+        var nether = world.dim === 1;
+        if (nether) { fogC = [0.2, 0.035, 0.025]; near = 6; far = min(far, 90); clearC = fogC; }
         if (headLava) { fogC = [0.6, 0.12, 0.0]; near = 0; far = 2.5; clearC = fogC; }
 
         fovCur = fovCur || fovDeg;
@@ -8593,7 +8975,7 @@
         gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         var skyM = mMul(P, mMul(mRotX(-pitch), mMul(mRotY(-yaw), mRotZ(-S.a))));
-        if (!headWater && !headLava) {
+        if (!headWater && !headLava && !nether) {
           if (d < 0.75) {
             gl.useProgram(progFlat);
             gl.uniformMatrix4fv(progFlat.u.uVP, false, skyM);
@@ -8632,7 +9014,7 @@
         gl.uniform1i(wprog.u.uTex, 0);
         gl.uniformMatrix4fv(wprog.u.uVP, false, VP);
         gl.uniform3f(wprog.u.uCam, cx, cy, cz);
-        gl.uniform1f(wprog.u.uSky, 0.3 + 0.7 * d);
+        gl.uniform1f(wprog.u.uSky, nether ? 1 : 0.3 + 0.7 * d);
         gl.uniform1f(wprog.u.uTime, elapsed);
         gl.uniform1f(wprog.u.uMode, 0);
         gl.uniform1f(wprog.u.uWave, 0);
@@ -8668,7 +9050,7 @@
         if (particles.length) drawParticles(VP, cx, cy, cz, fogC, near, far, h);
 
         // ----- clouds -----
-        if (!headWater && !headLava) drawClouds(VP, cx, cy, cz, fogC, d, sunDir);
+        if (!headWater && !headLava && !nether) drawClouds(VP, cx, cy, cz, fogC, d, sunDir);
 
         // ----- water (translucent) -----
         if (visWater.length) {
@@ -8684,7 +9066,7 @@
             gl.uniform1i(wprog2.u.uTex, 0);
             gl.uniformMatrix4fv(wprog2.u.uVP, false, VP);
             gl.uniform3f(wprog2.u.uCam, cx, cy, cz);
-            gl.uniform1f(wprog2.u.uSky, 0.3 + 0.7 * d);
+            gl.uniform1f(wprog2.u.uSky, nether ? 1 : 0.3 + 0.7 * d);
             gl.uniform1f(wprog2.u.uTime, elapsed);
             gl.uniform3f(wprog2.u.uSunDir, sunDir[0], sunDir[1], sunDir[2]);
             gl.uniform3f(wprog2.u.uSkyTop, sky[0], sky[1], sky[2]);
@@ -8787,6 +9169,7 @@
               else if (pt.anim === 'l1') rot = mRotX(-sw);
               else if (pt.anim === 'arm0') rot = mRotX(-PI / 2 + sw * 0.12);
               else if (pt.anim === 'arm1') rot = mRotX(-PI / 2 - sw * 0.12);
+              else if (pt.anim === 'spin') rot = mRotY(m.age * pt.sp + pt.ph);
               var pm = mTrans(pt.px / 16, pt.py / 16, pt.pz / 16);
               if (rot) pm = mMul(pm, rot);
               gl.uniformMatrix4fv(progEnt.u.uModel, false, mMul(model, pm));
